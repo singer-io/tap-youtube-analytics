@@ -1,0 +1,274 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "report_id": {
+      "type": ["null", "string"]
+    },
+    "report_type_id": {
+      "type": ["null", "string"]
+    },
+    "report_name": {
+      "type": ["null", "string"]
+    },
+    "create_time": {
+      "type": ["null", "string"],
+      "format": "date-time"
+    },
+    "dimensions_hash_key": {
+      "type": ["null", "string"]
+    },
+    "date": {
+      "type": ["null", "string"],
+      "format": "date-time"
+    },
+    "video_id": {
+      "type": ["null", "string"]
+    },
+    "playlist_id": {
+      "type": ["null", "string"]
+    },
+    "channel_id": {
+      "type": ["null", "string"]
+    },
+    "asset_id": {
+      "type": ["null", "string"]
+    },
+    "country_code": {
+      "type": ["null", "string"]
+    },
+    "province_code": {
+      "type": ["null", "string"]
+    },
+    "playback_location_type": {
+      "type": ["null", "string"]
+    },
+    "playback_location_detail": {
+      "type": ["null", "string"]
+    },
+    "live_or_on_demand": {
+      "type": ["null", "string"]
+    },
+    "subscribed_status": {
+      "type": ["null", "string"]
+    },
+    "traffic_source_type": {
+      "type": ["null", "string"]
+    },
+    "traffic_source_detail": {
+      "type": ["null", "string"]
+    },
+    "device_type": {
+      "type": ["null", "string"]
+    },
+    "operating_system": {
+      "type": ["null", "string"]
+    },
+    "age_group": {
+      "type": ["null", "string"]
+    },
+    "gender": {
+      "type": ["null", "string"]
+    },
+    "sharing_service": {
+      "type": ["null", "string"]
+    },
+    "annotation_type": {
+      "type": ["null", "string"]
+    },
+    "annotation_id": {
+      "type": ["null", "string"]
+    },
+    "card_type": {
+      "type": ["null", "string"]
+    },
+    "card_id": {
+      "type": ["null", "string"]
+    },
+    "end_screen_element_type": {
+      "type": ["null", "string"]
+    },
+    "end_screen_element_id": {
+      "type": ["null", "string"]
+    },
+    "subtitle_language": {
+      "type": ["null", "string"]
+    },
+    "ad_type": {
+      "type": ["null", "string"]
+    },
+    "claimed_status": {
+      "type": ["null", "string"]
+    },
+    "uploader_type": {
+      "type": ["null", "string"]
+    },
+
+    "views": {
+      "type": ["null", "integer"]
+    },
+    "red_views": {
+      "type": ["null", "integer"]
+    },
+    "views_percentage": {
+      "type": ["null", "number"],
+      "multipleOf": 1e-25
+    },
+    "watch_time_minutes": {
+      "type": ["null", "number"],
+      "multipleOf": 1e-25
+    },
+    "red_watch_time_minutes": {
+      "type": ["null", "number"],
+      "multipleOf": 1e-25
+    },
+    "average_view_duration_seconds": {
+      "type": ["null", "number"],
+      "multipleOf": 1e-25
+    },
+    "average_view_duration_percentage": {
+      "type": ["null", "number"],
+      "multipleOf": 1e-25
+    },
+    "comments": {
+      "type": ["null", "integer"]
+    },
+    "likes": {
+      "type": ["null", "integer"]
+    },
+    "dislikes": {
+      "type": ["null", "integer"]
+    },
+    "shares": {
+      "type": ["null", "integer"]
+    },
+    "subscribers_gained": {
+      "type": ["null", "integer"]
+    },
+    "subscribers_lost": {
+      "type": ["null", "integer"]
+    },
+    "videos_added_to_playlists": {
+      "type": ["null", "integer"]
+    },
+    "videos_removed_from_playlists": {
+      "type": ["null", "integer"]
+    },
+    "playlist_starts": {
+      "type": ["null", "integer"]
+    },
+    "playlist_saves_added": {
+      "type": ["null", "integer"]
+    },
+    "playlist_saves_removed": {
+      "type": ["null", "integer"]
+    },
+    "annotation_impressions": {
+      "type": ["null", "integer"]
+    },
+    "annotation_clickable_impressions": {
+      "type": ["null", "integer"]
+    },
+    "annotation_clicks": {
+      "type": ["null", "integer"]
+    },
+    "annotation_click_through_rate": {
+      "type": ["null", "number"],
+      "multipleOf": 1e-25
+    },
+    "annotation_closable_impressions": {
+      "type": ["null", "integer"]
+    },
+    "annotation_closes": {
+      "type": ["null", "integer"]
+    },
+    "annotation_close_rate": {
+      "type": ["null", "number"],
+      "multipleOf": 1e-25
+    },
+    "card_impressions": {
+      "type": ["null", "integer"]
+    },
+    "card_clicks": {
+      "type": ["null", "integer"]
+    },
+    "card_click_rate": {
+      "type": ["null", "number"],
+      "multipleOf": 1e-25
+    },
+    "card_teaser_impressions": {
+      "type": ["null", "integer"]
+    },
+    "card_teaser_clicks": {
+      "type": ["null", "integer"]
+    },
+    "card_teaser_click_rate": {
+      "type": ["null", "number"],
+      "multipleOf": 1e-25
+    },
+    "end_screen_element_impressions": {
+      "type": ["null", "integer"]
+    },
+    "end_screen_element_clicks": {
+      "type": ["null", "integer"]
+    },
+    "end_screen_element_click_rate": {
+      "type": ["null", "number"],
+      "multipleOf": 1e-25
+    },
+    "audience_retention_percentage": {
+      "type": ["null", "number"],
+      "multipleOf": 1e-25
+    },
+    "estimated_partner_revenue": {
+      "type": ["null", "number"],
+      "multipleOf": 1e-25
+    },
+    "estimated_partner_ad_revenue": {
+      "type": ["null", "number"],
+      "multipleOf": 1e-25
+    },
+    "estimated_partner_ad_auction_revenue": {
+      "type": ["null", "number"],
+      "multipleOf": 1e-25
+    },
+    "estimated_partner_ad_sense_revenue": {
+      "type": ["null", "number"],
+      "multipleOf": 1e-25
+    },
+    "estimated_partner_ad_reserved_revenue": {
+      "type": ["null", "number"],
+      "multipleOf": 1e-25
+    },
+    "estimated_partner_double_click_revenue": {
+      "type": ["null", "number"],
+      "multipleOf": 1e-25
+    },
+    "estimated_partner_red_revenue": {
+      "type": ["null", "number"],
+      "multipleOf": 1e-25
+    },
+    "estimated_partner_transaction_revenue": {
+      "type": ["null", "number"],
+      "multipleOf": 1e-25
+    },
+    "estimated_youtube_ad_revenue": {
+      "type": ["null", "number"],
+      "multipleOf": 1e-25
+    },
+    "estimated_cpm": {
+      "type": ["null", "number"],
+      "multipleOf": 1e-25
+    },
+    "ad_impressions": {
+      "type": ["null", "integer"]
+    },
+    "estimated_monetized_playbacks": {
+      "type": ["null", "integer"]
+    },
+    "estimated_playback_based_cpm": {
+      "type": ["null", "number"],
+      "multipleOf": 1e-25
+    }
+  }
+}

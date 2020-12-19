@@ -1,0 +1,161 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "kind": {
+      "type": ["null", "string"]
+    },
+    "etag": {
+      "type": ["null", "string"]
+    },
+    "id": {
+      "type": ["null", "string"]
+    },
+    "published_at": {
+      "type": ["null", "string"],
+      "format": "date-time"
+    },
+    "snippet": {
+      "type": ["null", "object"],
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": ["null", "string"]
+        },
+        "description": {
+          "type": ["null", "string"]
+        },
+        "custom_url": {
+          "type": ["null", "string"]
+        },
+        "published_at": {
+          "type": ["null", "string"],
+          "format": "date-time"
+        },
+        "thumbnails": {
+          "type": ["null", "object"],
+          "additionalProperties": false,
+          "properties": {
+            "default": {
+              "type": ["null", "object"],
+              "additionalProperties": false,
+              "properties": {
+                "url": {
+                  "type": ["null", "string"]
+                },
+                "width": {
+                  "type": ["null", "integer"]
+                },
+                "height": {
+                  "type": ["null", "integer"]
+                }
+              }
+            },
+            "medium": {
+              "type": ["null", "object"],
+              "additionalProperties": false,
+              "properties": {
+                "url": {
+                  "type": ["null", "string"]
+                },
+                "width": {
+                  "type": ["null", "integer"]
+                },
+                "height": {
+                  "type": ["null", "integer"]
+                }
+              }
+            },
+            "high": {
+              "type": ["null", "object"],
+              "additionalProperties": false,
+              "properties": {
+                "url": {
+                  "type": ["null", "string"]
+                },
+                "width": {
+                  "type": ["null", "integer"]
+                },
+                "height": {
+                  "type": ["null", "integer"]
+                }
+              }
+            }
+          }
+        },
+        "localized": {
+          "type": ["null", "object"],
+          "additionalProperties": false,
+          "properties": {
+            "title": {
+              "type": ["null", "string"]
+            },
+            "description": {
+              "type": ["null", "string"]
+            }
+          }
+        },
+        "country": {
+          "type": ["null", "string"]
+        }
+      }
+    },
+    "content_details": {
+      "type": ["null", "object"],
+      "additionalProperties": false,
+      "properties": {
+        "related_playlists": {
+          "type": ["null", "object"],
+          "additionalProperties": false,
+          "properties": {
+            "likes": {
+              "type": ["null", "string"]
+            },
+            "favorites": {
+              "type": ["null", "string"]
+            },
+            "uploads": {
+              "type": ["null", "string"]
+            }
+          }
+        }
+      }
+    },
+    "statistics": {
+      "type": ["null", "object"],
+      "additionalProperties": false,
+      "properties": {
+        "view_count": {
+          "type": ["null", "integer"]
+        },
+        "subscriber_count": {
+          "type": ["null", "integer"]
+        },
+        "hidden_subscriber_count": {
+          "type": ["null", "boolean"]
+        },
+        "video_count": {
+          "type": ["null", "integer"]
+        }
+      }
+    },
+    "status": {
+      "type": ["null", "object"],
+      "additionalProperties": false,
+      "properties": {
+        "privacy_status": {
+          "type": ["null", "string"]
+        },
+        "is_linked": {
+          "type": ["null", "boolean"]
+        },
+        "long_upload_status": {
+          "type": ["null", "string"]
+        },
+        "made_for_kids": {
+          "type": ["null", "boolean"]
+        }
+      }
+    }
+  }
+}

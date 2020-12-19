@@ -1,0 +1,132 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "kind": {
+      "type": ["null", "string"]
+    },
+    "etag": {
+      "type": ["null", "string"]
+    },
+    "id": {
+      "type": ["null", "string"]
+    },
+    "published_at": {
+      "type": ["null", "string"],
+      "format": "date-time"
+    },
+    "snippet": {
+      "type": ["null", "object"],
+      "additionalProperties": false,
+      "properties": {
+        "published_at": {
+          "type": ["null", "string"],
+          "format": "date-time"
+        },
+        "channel_id": {
+          "type": ["null", "string"]
+        },
+        "title": {
+          "type": ["null", "string"]
+        },
+        "description": {
+          "type": ["null", "string"]
+        },        
+        "thumbnails": {
+          "type": ["null", "object"],
+          "additionalProperties": false,
+          "properties": {
+            "default": {
+              "type": ["null", "object"],
+              "additionalProperties": false,
+              "properties": {
+                "url": {
+                  "type": ["null", "string"]
+                },
+                "width": {
+                  "type": ["null", "integer"]
+                },
+                "height": {
+                  "type": ["null", "integer"]
+                }
+              }
+            },
+            "medium": {
+              "type": ["null", "object"],
+              "additionalProperties": false,
+              "properties": {
+                "url": {
+                  "type": ["null", "string"]
+                },
+                "width": {
+                  "type": ["null", "integer"]
+                },
+                "height": {
+                  "type": ["null", "integer"]
+                }
+              }
+            },
+            "high": {
+              "type": ["null", "object"],
+              "additionalProperties": false,
+              "properties": {
+                "url": {
+                  "type": ["null", "string"]
+                },
+                "width": {
+                  "type": ["null", "integer"]
+                },
+                "height": {
+                  "type": ["null", "integer"]
+                }
+              }
+            }
+          }
+        },
+        "channel_title": {
+          "type": ["null", "string"]
+        },
+        "playlist_id": {
+          "type": ["null", "string"]
+        },
+        "position": {
+          "type": ["null", "integer"]
+        },
+        "resource_id": {
+          "type": ["null", "object"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": ["null", "string"]
+            },
+            "video_id": {
+              "type": ["null", "string"]
+            }
+          }
+        }
+      }
+    },
+    "content_details": {
+      "type": ["null", "object"],
+      "additionalProperties": false,
+      "properties": {
+        "video_id": {
+          "type": ["null", "string"]
+        },
+        "video_published_at": {
+          "type": ["null", "string"],
+          "format": "date-time"
+        }
+      }
+    },
+    "status": {
+      "type": ["null", "object"],
+      "additionalProperties": false,
+      "properties": {
+        "privacy_status": {
+          "type": ["null", "string"]
+        }
+      }
+    }
+  }
+}
