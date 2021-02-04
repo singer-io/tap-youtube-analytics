@@ -128,6 +128,65 @@ def raise_for_error(response):
         except (ValueError, TypeError):
             raise GoogleError(error)
 
+# Pagination loop for API calls to yield records
+def get_paginated_data(client, url, path, endpoint, params, data_key='items'):
+    total_count = 0
+    page = 1
+    is_next_page = True
+    page_token = ''
+
+    while is_next_page:
+        if page > 1:
+            params['pageToken'] = page_token
+
+        # Squash params to query-string params for URL
+        querystring = None
+        if params.items():
+            querystring = '&'.join(['%s=%s' % (key, value) for (key, value) in params.items()])
+        LOGGER.info('Endpoint: {}, URL: {}/{}{}'.format(
+            endpoint,
+            url,
+            path,
+            '?{}'.format(querystring) if querystring else ''))
+
+        data = {}
+        data = client.get(
+            url=url,
+            path=path,
+            params=params,
+            endpoint=endpoint
+        )
+
+        if not data or data is None or data == {}:
+            LOGGER.info('xxx NO DATA xxx')
+            yield None
+
+        total_results = data.get('pageInfo', {}).get('totalResults')
+        results = data.get(data_key, [])
+        results_count = len(results)
+        from_count = total_count + 1
+        total_count = total_count + results_count
+        to_count = total_count
+
+        LOGGER.info('Endpoint: {}, Page: {}, Results: {}-{} of Total: {}'.format(
+            endpoint,
+            page,
+            from_count,
+            to_count,
+            total_results))
+
+        if not results or results is None or results == []:
+            yield None
+
+        for result in data.get(data_key, []):
+            yield result
+
+        # Pagination: increment the offset by the limit (batch-size)
+        page_token = data.get('nextPageToken')
+        if page_token is None:
+            is_next_page = False
+        page = page + 1
+
 class GoogleClient: # pylint: disable=too-many-instance-attributes
     def __init__(self,
                  client_id,
