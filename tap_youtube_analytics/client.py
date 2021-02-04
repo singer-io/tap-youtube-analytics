@@ -1,11 +1,11 @@
+import codecs
 import csv
 from datetime import datetime, timedelta
+
 import backoff
 import requests
-
 import singer
-from singer import metrics
-from singer import utils
+from singer import metrics, utils
 
 BASE_URL = 'https://www.googleapis.com/youtube/v3'
 GOOGLE_TOKEN_URI = 'https://oauth2.googleapis.com/token'
@@ -264,25 +264,25 @@ class GoogleClient: # pylint: disable=too-many-instance-attributes
             kwargs['headers']['User-Agent'] = self.__user_agent
 
         with metrics.http_request_timer(endpoint) as timer:
-            response = self.__session.request('GET', url, **kwargs)
-            timer.tags[metrics.Tag.http_status_code] = response.status_code
+            with self.__session.request('GET', url, stream=True, **kwargs) as response:
+                timer.tags[metrics.Tag.http_status_code] = response.status_code
 
-        if response.status_code >= 500:
-            raise Server5xxError()
+                if response.status_code >= 500:
+                    raise Server5xxError()
 
-        #Use retry functionality in backoff to wait and retry if
-        #response code equals 429 because rate limit has been exceeded
-        if response.status_code == 429:
-            raise Server429Error()
+                #Use retry functionality in backoff to wait and retry if
+                #response code equals 429 because rate limit has been exceeded
+                if response.status_code == 429:
+                    raise Server429Error()
 
-        if response.status_code != 200:
-            raise_for_error(response)
+                if response.status_code != 200:
+                    raise_for_error(response)
 
-        # Stream CSV results for report_download
-        response_content = response.content.decode('utf-8')
-        reader = csv.DictReader(response_content.splitlines(), delimiter=',')
-        for record in reader:
-            yield record
+                # Stream CSV results for report_download
+                reader = csv.DictReader(codecs.iterdecode(response.iter_lines(), encoding='utf-8'), delimiter=',')
+
+                for record in reader:
+                    yield record
 
     def get(self, path=None, url=None, **kwargs):
         return self.request('GET', path=path, url=url, **kwargs)
