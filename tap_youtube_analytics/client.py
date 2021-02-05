@@ -1,5 +1,6 @@
 import codecs
 import csv
+import json
 from datetime import datetime, timedelta
 
 import backoff
@@ -159,7 +160,6 @@ def get_paginated_data(client, url, path, endpoint, params, data_key='items'):
 
         if not data or data is None or data == {}:
             LOGGER.info('xxx NO DATA xxx')
-            yield None
 
         total_results = data.get('pageInfo', {}).get('totalResults')
         results = data.get(data_key, [])
@@ -285,6 +285,9 @@ class GoogleClient: # pylint: disable=too-many-instance-attributes
         if method == 'POST':
             kwargs['headers']['Content-Type'] = 'application/json'
 
+        if kwargs.get('data'):
+            kwargs['data'] = json.dumps(kwargs['data'])
+
         with metrics.http_request_timer(endpoint) as timer:
             response = self.__session.request(method, url, **kwargs)
             timer.tags[metrics.Tag.http_status_code] = response.status_code
@@ -303,7 +306,10 @@ class GoogleClient: # pylint: disable=too-many-instance-attributes
         response_json = response.json()
         return response_json
 
-
+    @backoff.on_exception(backoff.expo,
+                          (Server5xxError, ConnectionError, Server429Error),
+                          max_tries=7,
+                          factor=3)
     def get_report(self, url, **kwargs):
 
         self.get_access_token()
@@ -323,25 +329,28 @@ class GoogleClient: # pylint: disable=too-many-instance-attributes
             kwargs['headers']['User-Agent'] = self.__user_agent
 
         with metrics.http_request_timer(endpoint) as timer:
-            with self.__session.request('GET', url, stream=True, **kwargs) as response:
-                timer.tags[metrics.Tag.http_status_code] = response.status_code
+            try:
+                with self.__session.request('GET', url, stream=True, **kwargs) as response:
+                    timer.tags[metrics.Tag.http_status_code] = response.status_code
 
-                if response.status_code >= 500:
-                    raise Server5xxError()
+                    if response.status_code >= 500:
+                        raise Server5xxError()
 
-                #Use retry functionality in backoff to wait and retry if
-                #response code equals 429 because rate limit has been exceeded
-                if response.status_code == 429:
-                    raise Server429Error()
+                    #Use retry functionality in backoff to wait and retry if
+                    #response code equals 429 because rate limit has been exceeded
+                    if response.status_code == 429:
+                        raise Server429Error()
 
-                if response.status_code != 200:
-                    raise_for_error(response)
+                    if response.status_code != 200:
+                        raise_for_error(response)
 
-                # Stream CSV results for report_download
-                reader = csv.DictReader(codecs.iterdecode(response.iter_lines(), encoding='utf-8'), delimiter=',')
+                    # Stream CSV results for report_download
+                    reader = csv.DictReader(codecs.iterdecode(response.iter_lines(), encoding='utf-8'), delimiter=',')
 
-                for record in reader:
-                    yield record
+                    for page in reader:
+                        yield page
+            except Exception as e:
+                LOGGER.info(e)
 
     def get(self, path=None, url=None, **kwargs):
         return self.request('GET', path=path, url=url, **kwargs)

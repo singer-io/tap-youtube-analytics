@@ -444,43 +444,44 @@ def sync_report(client,
         )
 
         for report in reports:
-            download_url = report.get('downloadUrl')
+            if report:
+                download_url = report.get('downloadUrl')
 
-            # Get report csv records to json
-            records = client.get_report(
-                url=download_url,
-                endpoint='report_download')
-            time_extracted = utils.now()
+                # Get report csv records to json
+                records = client.get_report(
+                    url=download_url,
+                    endpoint='report_download')
+                time_extracted = utils.now()
 
-            for record in records:
-                for key in dimensions:
-                    if not record.get(key):
-                        err = 'Stream: {}, Missing key: {}, Dimensions: {}, Record: {}'.format(
-                            stream_name, key, dimensions, record)
-                        raise ValueError(err)
+                for record in records:
+                    for key in dimensions:
+                        if not record.get(key):
+                            err = 'Stream: {}, Missing key: {}, Dimensions: {}, Record: {}'.format(
+                                stream_name, key, dimensions, record)
+                            raise ValueError(err)
 
-                with Transformer() as transformer:
-                    try:
-                        transformed_record = transformer.transform(
-                            transform_report_record(record, dimensions, report),
-                            schema,
-                            stream_metadata)
-                    except Exception as err:
-                        LOGGER.error('Transformer Error: %s', err)
-                        LOGGER.error('Stream: %s, record: %s', stream_name, record)
-                        raise err
+                    with Transformer() as transformer:
+                        try:
+                            transformed_record = transformer.transform(
+                                transform_report_record(record, dimensions, report),
+                                schema,
+                                stream_metadata)
+                        except Exception as err:
+                            LOGGER.error('Transformer Error: %s', err)
+                            LOGGER.error('Stream: %s, record: %s', stream_name, record)
+                            raise err
 
-                    # Bookmarking
-                    bookmark_date = transformed_record.get('create_time')
-                    bookmark_dttm = strptime_to_utc(bookmark_date)
-                    max_bookmark_dttm = strptime_to_utc(max_bookmark_value)
-                    if bookmark_dttm > max_bookmark_dttm:
-                        max_bookmark_value = strftime(bookmark_dttm)
+                        # Bookmarking
+                        bookmark_date = transformed_record.get('create_time')
+                        bookmark_dttm = strptime_to_utc(bookmark_date)
+                        max_bookmark_dttm = strptime_to_utc(max_bookmark_value)
+                        if bookmark_dttm > max_bookmark_dttm:
+                            max_bookmark_value = strftime(bookmark_dttm)
 
-                    # Only sync records whose bookmark is after the last_datetime
-                    if bookmark_dttm >= last_dttm:
-                        write_record(stream_name, transformed_record, time_extracted=time_extracted)
-                        counter.increment()
+                        # Only sync records whose bookmark is after the last_datetime
+                        if bookmark_dttm >= last_dttm:
+                            write_record(stream_name, transformed_record, time_extracted=time_extracted)
+                            counter.increment()
 
         # Write bookmark after all records synced due to sort descending (most recent first)
         write_bookmark(state, stream_name, max_bookmark_value)
