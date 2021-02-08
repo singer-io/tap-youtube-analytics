@@ -455,7 +455,7 @@ def sync_report(client,
 
                 for record in records:
                     for key in dimensions:
-                        if not record.get(key):
+                        if record.get(key) is None:
                             err = 'Stream: {}, Missing key: {}, Dimensions: {}, Record: {}'.format(
                                 stream_name, key, dimensions, record)
                             raise ValueError(err)
