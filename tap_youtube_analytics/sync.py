@@ -223,6 +223,8 @@ def sync_playlist_items(client,
                 time_extracted = utils.now()
 
                 for record in records:
+                    if record is None:
+                        continue
                     for key in id_fields:
                         if not record.get(key):
                             raise ValueError('Stream: {}, Missing key: {}'.format(stream_name, key))
@@ -303,6 +305,8 @@ def sync_videos(client,
 
             i = 0
             for search_record in search_records:
+                if search_record is None:
+                    continue
                 video_id = search_record.get('id', {}).get('videoId')
                 video_ids.append(video_id)
 
