@@ -307,18 +307,17 @@ def sync_videos(client,
             for search_record in search_records:
                 if search_record is None:
                     continue
-                video_id = search_record.get('id', {}).get('videoId')
-                video_ids.append(video_id)
 
                 # Bookmarking
                 bookmark_date = search_record.get('snippet', {}).get('publishedAt')
                 bookmark_dttm = strptime_to_utc(bookmark_date)
-                if i == 0:
-                    max_bookmark_value = bookmark_date
-                # Stop looping when bookmark is before last datetime
-                if bookmark_dttm < last_dttm:
+
+                # Only process records newer than previous run
+                if bookmark_dttm > last_dttm:
+                    video_id = search_record.get('id', {}).get('videoId')
+                    video_ids.append(video_id)
+                else:
                     break
-                i = i + 1
 
             # Break into chunks of 50 video_ids
             video_id_chunks = chunks(video_ids, 50)
