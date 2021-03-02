@@ -248,7 +248,7 @@ def sync_playlist_items(client,
                             max_bookmark_value = strftime(bookmark_dttm)
 
                         # Only sync records whose bookmark is after the last_datetime
-                        if bookmark_dttm >= last_dttm:
+                        if bookmark_dttm > last_dttm:
                             write_record(stream_name, transformed_record, \
                                 time_extracted=time_extracted)
                             counter.increment()
