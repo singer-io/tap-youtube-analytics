@@ -316,6 +316,7 @@ def sync_videos(client,
                 if bookmark_dttm > last_dttm:
                     video_id = search_record.get('id', {}).get('videoId')
                     video_ids.append(video_id)
+                    max_bookmark_value = strftime(max(bookmark_dttm, strptime_to_utc(max_bookmark_value)))
                 else:
                     break
 
