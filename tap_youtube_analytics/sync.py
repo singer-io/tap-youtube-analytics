@@ -22,7 +22,7 @@ def write_schema(catalog, stream_name):
     try:
         singer.write_schema(stream_name, schema, stream.key_properties)
     except OSError as err:
-        LOGGER.error('OS Error writing schema for: %s', stream_name)
+        LOGGER.debug('OS Error writing schema for: %s', stream_name)
         raise err
 
 
@@ -30,12 +30,12 @@ def write_record(stream_name, record, time_extracted):
     try:
         singer.messages.write_record(stream_name, record, time_extracted=time_extracted)
     except OSError as err:
-        LOGGER.error('OS Error writing record for: %s', stream_name)
-        LOGGER.error('Stream: %s, record: %s', stream_name, record)
+        LOGGER.debug('OS Error writing record for: %s', stream_name)
+        LOGGER.debug('Stream: %s, record: %s', stream_name, record)
         raise err
     except TypeError as err:
-        LOGGER.error('Type Error writing record for: %s', stream_name)
-        LOGGER.error('Stream: %s, record: %s', stream_name, record)
+        LOGGER.debug('Type Error writing record for: %s', stream_name)
+        LOGGER.debug('Stream: %s, record: %s', stream_name, record)
         raise err
 
 
@@ -110,8 +110,8 @@ def sync_channels(client,
                         schema,
                         stream_metadata)
                 except Exception as err:
-                    LOGGER.error('Transformer Error: %s', err)
-                    LOGGER.error('Stream: %s, record: %s', stream_name, record)
+                    LOGGER.debug('Transformer Error: %s', err)
+                    LOGGER.debug('Stream: %s, record: %s', stream_name, record)
                     raise err
 
                 write_record(stream_name, transformed_record, time_extracted=time_extracted)
@@ -161,8 +161,8 @@ def sync_playlists(client,
                             schema,
                             stream_metadata)
                     except Exception as err:
-                        LOGGER.error('Transformer Error: %s', err)
-                        LOGGER.error('Stream: %s, record: %s', stream_name, record)
+                        LOGGER.debug('Transformer Error: %s', err)
+                        LOGGER.debug('Stream: %s, record: %s', stream_name, record)
                         raise err
 
                     write_record(stream_name, transformed_record, time_extracted=time_extracted)
@@ -236,8 +236,8 @@ def sync_playlist_items(client,
                                 schema,
                                 stream_metadata)
                         except Exception as err:
-                            LOGGER.error('Transformer Error: %s', err)
-                            LOGGER.error('Stream: %s, record: %s', stream_name, record)
+                            LOGGER.debug('Transformer Error: %s', err)
+                            LOGGER.debug('Stream: %s, record: %s', stream_name, record)
                             raise err
 
                         # Bookmarking
@@ -349,8 +349,8 @@ def sync_videos(client,
                                 schema,
                                 stream_metadata)
                         except Exception as err:
-                            LOGGER.error('Transformer Error: %s', err)
-                            LOGGER.error('Stream: %s, record: %s', stream_name, record)
+                            LOGGER.debug('Transformer Error: %s', err)
+                            LOGGER.debug('Stream: %s, record: %s', stream_name, record)
                             raise err
 
                         write_record(stream_name, transformed_record, time_extracted=time_extracted)
@@ -471,8 +471,8 @@ def sync_report(client,
                                 schema,
                                 stream_metadata)
                         except Exception as err:
-                            LOGGER.error('Transformer Error: %s', err)
-                            LOGGER.error('Stream: %s, record: %s', stream_name, record)
+                            LOGGER.debug('Transformer Error: %s', err)
+                            LOGGER.debug('Stream: %s, record: %s', stream_name, record)
                             raise err
 
                         # Bookmarking
