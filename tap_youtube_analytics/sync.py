@@ -39,9 +39,16 @@ def write_record(stream_name, record, time_extracted):
         raise err
 
 
-def get_bookmark(state, stream, default):
+def get_bookmark(state, stream, default, parent_id=None):
     if (state is None) or ('bookmarks' not in state):
         return default
+    if parent_id:
+        return (
+        state
+        .get('bookmarks', {})
+        .get(stream, {})
+        .get(parent_id, default)
+    )
     return (
         state
         .get('bookmarks', {})
@@ -49,10 +56,15 @@ def get_bookmark(state, stream, default):
     )
 
 
-def write_bookmark(state, stream, value):
+def write_bookmark(state, stream, value, parent_id=None):
     if 'bookmarks' not in state:
         state['bookmarks'] = {}
-    state['bookmarks'][stream] = value
+    if stream not in state['bookmarks']:
+        state['bookmarks'][stream] = {}
+    if parent_id:
+        state['bookmarks'][stream][parent_id] = value
+    else:
+        state['bookmarks'][stream] = value
     LOGGER.info('Write state for stream: %s, value: %s', stream, value)
     singer.write_state(state)
 
@@ -276,11 +288,6 @@ def sync_videos(client,
     params = endpoint_config.get('params', {})
     channel_list = channel_ids.split(',')
 
-    # Initialize bookmarking
-    last_datetime = get_bookmark(state, stream_name, start_date)
-    last_dttm = strptime_to_utc(last_datetime)
-    max_bookmark_value = last_datetime
-
     search_params = {
         'part': 'id,snippet',
         'channelId': '{channel_id}',
@@ -292,6 +299,12 @@ def sync_videos(client,
     with metrics.record_counter(stream_name) as counter:
         # Loop each channel_id from config
         for channel_id in channel_list:
+            write_schema(catalog, stream_name)
+            # Initialize bookmarking
+            last_datetime = get_bookmark(state, stream_name, start_date, parent_id=channel_id)
+            last_dttm = strptime_to_utc(last_datetime)
+            max_bookmark_value = last_datetime
+
             video_ids = []
             search_params['channelId'] = channel_id
             search_records = get_paginated_data(
@@ -356,8 +369,9 @@ def sync_videos(client,
                         write_record(stream_name, transformed_record, time_extracted=time_extracted)
                         counter.increment()
 
-        # Write bookmark after all records synced due to sort descending (most recent first)
-        write_bookmark(state, stream_name, max_bookmark_value)
+            # Write bookmark after all records synced due to sort descending (most recent first)
+            # Include channel_id in bookmark
+            write_bookmark(state, stream_name, max_bookmark_value, parent_id=channel_id)
 
         LOGGER.info('Stream: {}, Processed {} records'.format(stream_name, counter.value))
         return counter.value
