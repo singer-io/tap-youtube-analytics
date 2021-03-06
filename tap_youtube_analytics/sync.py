@@ -202,11 +202,6 @@ def sync_playlist_items(client,
     playlist_params = STREAMS.get('playlists', {}).get('params', {})
     channel_list = channel_ids.split(',')
 
-    # Initialize bookmarking
-    last_datetime = get_bookmark(state, stream_name, start_date)
-    last_dttm = strptime_to_utc(last_datetime)
-    max_bookmark_value = last_datetime
-
     with metrics.record_counter(stream_name) as counter:
         # Loop each channel_id from config
         for channel_id in channel_list:
@@ -224,6 +219,12 @@ def sync_playlist_items(client,
             for playlist in playlists:
                 playlist_id = playlist.get('id')
                 params['playlistId'] = playlist_id
+
+                # Initialize bookmarking
+                last_datetime = get_bookmark(state, stream_name, start_date, parent_id=playlist_id)
+                last_dttm = strptime_to_utc(last_datetime)
+                max_bookmark_value = last_datetime
+                write_schema(catalog, stream_name)
                 records = get_paginated_data(
                     client=client,
                     url=DATA_URL,
@@ -265,8 +266,8 @@ def sync_playlist_items(client,
                                 time_extracted=time_extracted)
                             counter.increment()
 
-        # Youtube API does not allow page/batch sorting for playlist_items
-        write_bookmark(state, stream_name, max_bookmark_value)
+                # Youtube API does not allow page/batch sorting for playlist_items
+                write_bookmark(state, stream_name, max_bookmark_value, parent_id=playlist_id)
 
         LOGGER.info('Stream: {}, Processed {} records'.format(stream_name, counter.value))
         return counter.value
