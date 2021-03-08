@@ -393,19 +393,6 @@ def sync_report(client,
     report_type = endpoint_config.get('report_type')
     dimensions = endpoint_config.get('dimensions', [])
 
-    # Initialize bookmarking
-    # There is a 2-3 day lag (sometimes up to 6-7 days lag) in YouTube results reconcilliation
-    now_dttm = utils.now()
-    attribution_start_dttm = now_dttm - timedelta(days=ATTRIBUTION_DAYS)
-    last_datetime = get_bookmark(state, stream_name, start_date)
-    last_dttm = strptime_to_utc(last_datetime)
-
-    if attribution_start_dttm < last_dttm:
-        last_dttm = attribution_start_dttm
-        last_datetime = strftime(last_dttm)
-
-    max_bookmark_value = last_datetime
-
     with metrics.record_counter(stream_name) as counter:
         job_id = None
         job_params = {
@@ -430,6 +417,19 @@ def sync_report(client,
                 job_exists = True
                 job_id = job.get('id')
                 break
+
+        # Initialize bookmarking
+        # There is a 2-3 day lag (sometimes up to 6-7 days lag) in YouTube results reconcilliation
+        now_dttm = utils.now()
+        attribution_start_dttm = now_dttm - timedelta(days=ATTRIBUTION_DAYS)
+        last_datetime = get_bookmark(state, stream_name, start_date, parent_id=job_id)
+        last_dttm = strptime_to_utc(last_datetime)
+
+        if attribution_start_dttm < last_dttm:
+            last_dttm = attribution_start_dttm
+            last_datetime = strftime(last_dttm)
+
+        max_bookmark_value = last_datetime
 
         # Create job for stream if not job_exists
         if not job_exists:
@@ -503,7 +503,7 @@ def sync_report(client,
                             counter.increment()
 
         # Write bookmark after all records synced due to sort descending (most recent first)
-        write_bookmark(state, stream_name, max_bookmark_value)
+        write_bookmark(state, stream_name, max_bookmark_value, parent_id=job_id)
 
         LOGGER.info('Stream: {}, Processed {} records'.format(stream_name, counter.value))
         return counter.value
