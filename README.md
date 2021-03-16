@@ -130,6 +130,20 @@ The [**Youtube Analytics Authentication**](https://docs.google.com/document/d/1F
     ```bash
       TBD
     ```
+
+## Notes about the state.json file
+
+The following streams include the parent id in the output of the state file:
+| stream | parent id |
+| ------ | --------- |
+| videos | channel_id |
+| playlist | playlist_id |
+| reports | job_id |
+
+For example, the file will look like this:
+```json
+{"bookmarks": {"playlist_items": {"id12345": "2020-12-01T15:10:32.000000Z", "id45678": "2005-01-01T00:00:00Z"}}}
+```
 ---
 
 Copyright &copy; 2019 Stitch
