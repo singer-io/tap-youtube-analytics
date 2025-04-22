@@ -10,6 +10,7 @@ from singer import (
     write_schema,
     metadata
 )
+import humps
 
 LOGGER = get_logger()
 
@@ -26,9 +27,10 @@ class BaseStream(ABC):
 
     url_endpoint = ""
     path = ""
-    page_size = 50
+    # page_size = 50
     next_page_key = "nextPageToken"
-    headers = {'Accept': 'application/json'}
+    headers = {"Accept": "application/json"}
+    params = {}
     children = []
     parent = ""
     data_key = ""
@@ -94,17 +96,54 @@ class BaseStream(ABC):
 
     def get_records(self) -> List:
         """Interacts with api client interaction and pagination."""
-        self.params["page"] = self.page_size
-        next_page = 1
-        while next_page:
-            response = self.client.get(
-                self.url_endpoint, self.params, self.headers, self.path
-            )
-            raw_records = response.get(self.data_key, [])
-            next_page = response.get(self.next_page_key)
+        # self.params["maxResults"] = self.pamax_results
+        total_count = 0
+        page = 1
+        is_next_page = True
+        page_token = ""
 
-            self.params[self.next_page_key] = next_page
-            yield from raw_records
+        while is_next_page:
+            if page > 1:
+                self.params["pageToken"] = page_token
+
+            # Squash params to query-string params for URL
+            querystring = None
+            if self.params.items():
+                querystring = "&".join(["%s=%s" % (key, value) for (key, value) in self.params.items()])
+
+            response = {}
+            response = self.client.get(
+                # self.client.base_url, self.path, self.params, self.endpoint   # self.headers 3rd argument is not used
+                url=self.client.base_url,
+                path=self.path,
+                params=self.params,
+                endpoint=self.endpoint
+            )
+            if not response or response is None or response == {}:
+                LOGGER.info("Data not found for endpoint: %s", self.url_endpoint)
+
+            total_results = response.get("pageInfo", {}).get("totalResults")
+            results = response.get(self.data_key, [])
+            results_count = len(results)
+            from_count = total_count + 1
+            total_count = total_count + results_count
+            to_count = total_count
+
+            LOGGER.info(f"Endpoint: {self.url_endpoint}, Page: {page}, Results: {from_count}-{to_count} of Total: {total_results}")
+
+            if not results or results is None or results == []:
+                yield None
+
+            for result in response.get(self.data_key, []):
+                if result is None:
+                    continue
+                yield result
+
+            # Pagination: increment the offset by the limit (batch-size)
+            page_token = response.get("nextPageToken")
+            if page_token is None:
+                is_next_page = False
+            page += 1
 
     def write_schema(self) -> None:
         """Write a schema message."""
@@ -112,7 +151,7 @@ class BaseStream(ABC):
             write_schema(self.tap_stream_id, self.schema, self.key_properties)
         except OSError as err:
             LOGGER.error(
-                "OS Error while writing schema for: {}".format(self.tap_stream_id)
+                f"OS Error while writing schema for: {self.tap_stream_id}"
             )
             raise err
 
@@ -128,10 +167,22 @@ class BaseStream(ABC):
         """Get the URL endpoint for the stream"""
         return self.url_endpoint or f"{self.client.base_url}/{self.path}"
 
+    # PyHumps: camelCase to snake_case
+    # Reference: https://github.com/nficano/humps
+    def transform_data_record(self, record):
+        """"Transform data record to snake_case."""
+        new_record = humps.decamelize(record.copy())
+
+        # denest published_at
+        published_at = new_record.get("snippet", {}).get("published_at")
+        new_record["published_at"] = published_at
+
+        return new_record
 
 class IncrementalStream(BaseStream):
     """Base Class for Incremental Stream."""
-
+    replication_method = "INCREMENTAL"
+    forced_replication_method = "INCREMENTAL"
 
     def get_bookmark(self, state: dict, stream: str, key: Any = None) -> int:
         """A wrapper for singer.get_bookmark to deal with compatibility for
@@ -196,6 +247,11 @@ class IncrementalStream(BaseStream):
 class FullTableStream(BaseStream):
     """Base Class for Incremental Stream."""
 
+    replication_method = "FULL_TABLE"
+    forced_replication_method = "FULL_TABLE"
+    valid_replication_keys = None
+    replication_keys = None
+
     def sync(
         self,
         state: Dict,
@@ -204,10 +260,11 @@ class FullTableStream(BaseStream):
     ) -> Dict:
         """Abstract implementation for `type: Fulltable` stream."""
         self.url_endpoint = self.get_url_endpoint(parent_obj)
+        self.update_params()
         with metrics.record_counter(self.tap_stream_id) as counter:
             for record in self.get_records():
                 transformed_record = transformer.transform(
-                    record, self.schema, self.metadata
+                    self.transform_data_record(record), self.schema, self.metadata
                 )
                 if self.is_selected:
                     write_record(self.tap_stream_id, transformed_record)

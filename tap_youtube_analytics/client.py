@@ -1,12 +1,14 @@
 from typing import Any, Dict, Mapping, Optional, Tuple
 
 import backoff
+from datetime import datetime, timedelta
+import json
 import requests
 from requests import session
 from requests.exceptions import Timeout, ConnectionError, ChunkedEncodingError
 from singer import get_logger, metrics
 
-from tap_youtube_analytics.exceptions import ERROR_CODE_EXCEPTION_MAPPING, YoutubeAnalyticsError, YoutubeAnalyticsBackoffError
+from tap_youtube_analytics.exceptions import ERROR_CODE_EXCEPTION_MAPPING, YoutubeAnalyticsError, YoutubeAnalyticsBackoffError, YoutubeAnalyticsRateLimitError
 
 LOGGER = get_logger()
 REQUEST_TIMEOUT = 300
@@ -24,7 +26,7 @@ def raise_for_error(response: requests.Response) -> None:
         response_json = {}
     if response.status_code != [200, 201, 204]:
         if response_json.get("error"):
-            message = "HTTP-error-code: {}, Error: {}".format(response.status_code, response_json.get("error"))
+            message = f"HTTP-error-code: {response.status_code}, Error: {response_json.get('error')}"
         else:
             message = "HTTP-error-code: {}, Error: {}".format(
                 response.status_code,
@@ -45,8 +47,11 @@ class Client:
 
     def __init__(self, config: Mapping[str, Any]) -> None:
         self.config = config
+        self.__access_token = None
+        self.__expires = None
         self._session = session()
         self.base_url = "https://www.googleapis.com/youtube/v3"
+        self.google_token_uri = "https://oauth2.googleapis.com/token"
 
 
         config_request_timeout = config.get("request_timeout")
@@ -59,25 +64,47 @@ class Client:
     def __exit__(self, exception_type, exception_value, traceback):
         self._session.close()
 
+    @backoff.on_exception(backoff.expo,
+                        YoutubeAnalyticsBackoffError,
+                        max_tries=5,
+                        factor=2)
     def check_api_credentials(self) -> None:
-        pass
+        if self.__access_token is not None and self.__expires > datetime.utcnow():
+            return
 
-    def authenticate(self, headers: Dict, params: Dict) -> Tuple[Dict, Dict]:
-        """Authenticates the request with the token"""
-        headers["Authorization"] = self.config["access_token"]
-        return headers, params
+        headers = {}
+        if self.config["user_agent"]:
+            headers["User-Agent"] = self.config["user_agent"]
 
-    def get(self, endpoint: str, params: Dict, headers: Dict, path: str = None) -> Any:
+        response = self._session.post(
+            url=self.google_token_uri,
+            headers=headers,
+            data={
+                "grant_type": "refresh_token",
+                "client_id": self.config["client_id"],
+                "client_secret": self.config["client_secret"],
+                "refresh_token": self.config["refresh_token"],
+            })
+
+        if response.status_code >= 500:
+            raise YoutubeAnalyticsBackoffError()
+
+        if response.status_code != 200:
+            raise_for_error(response)
+
+        data = response.json()
+        self.__access_token = data["access_token"]
+        self.__expires = datetime.utcnow() + timedelta(seconds=data["expires_in"])
+        LOGGER.info(f"Authorized, token expires = {self.__expires}")
+
+    def get(self, path=None, url=None, **kwargs):
         """Calls the make_request method with a prefixed method type `GET`"""
-        endpoint = endpoint or f"{self.base_url}/{path}"
-        headers, params = self.authenticate(headers, params)
-        return self.__make_request("GET", endpoint, headers=headers, params=params, timeout=self.request_timeout)
+        return self.__make_request("GET", path=path, url=url, **kwargs)
 
-    def post(self, endpoint: str, params: Dict, headers: Dict, body: Dict, path: str = None) -> Any:
+    def post(self, path=None, url=None, **kwargs):
         """Calls the make_request method with a prefixed method type `POST`"""
+        return self.__make_request("POST", path=path, url=url, **kwargs)
 
-        headers, params = self.authenticate(headers, params)
-        self.__make_request("POST", endpoint, headers=headers, params=params, data=body, timeout=self.request_timeout)
 
 
     @backoff.on_exception(
@@ -92,7 +119,7 @@ class Client:
         max_tries=5,
         factor=2,
     )
-    def __make_request(self, method: str, endpoint: str, **kwargs) -> Optional[Mapping[Any, Any]]:
+    def __make_request(self, method: str, path=None, url=None, **kwargs) -> Optional[Mapping[Any, Any]]:
         """Performs HTTP Operations
         Args:
             method (str): represents the state file for the tap.
@@ -104,8 +131,46 @@ class Client:
         Returns:
             Dict,List,None: Returns a `Json Parsed` HTTP Response or None if exception
         """
+        self.check_api_credentials()
+
+        if url and path:
+            url = f"{url}/{path}"
+
+        if not url and path:
+            url = f"{self.base_url}/{path}"
+
+        if "endpoint" in kwargs:
+            endpoint = kwargs["endpoint"]
+            del kwargs["endpoint"]
+        else:
+            endpoint = None
+
+        if "headers" not in kwargs:
+            kwargs["headers"] = {}
+        kwargs["headers"]["Authorization"] = f"Bearer {self.__access_token}"
+
+        if self.config["user_agent"]:
+            kwargs["headers"]["User-Agent"] = self.config["user_agent"]
+
+        if method == "POST":
+            kwargs["headers"]["Content-Type"] = "application/json"
+
+        if kwargs.get("data"):
+            kwargs["data"] = json.dumps(kwargs["data"])
+
         with metrics.http_request_timer(endpoint) as timer:
-            response = self._session.request(method, endpoint, **kwargs)
+            response = self._session.request(method, url, **kwargs)
+            timer.tags[metrics.Tag.http_status_code] = response.status_code
+
+        if response.status_code >= 500:
+            raise YoutubeAnalyticsBackoffError()
+
+        #Use retry functionality in backoff to wait and retry if
+        #response code equals 429 because rate limit has been exceeded
+        if response.status_code == 429:
+            raise YoutubeAnalyticsRateLimitError()
+
+        if response.status_code != 200:
             raise_for_error(response)
 
         return response.json()

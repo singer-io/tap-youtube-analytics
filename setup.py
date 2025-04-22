@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 setup(
@@ -12,6 +12,7 @@ setup(
     install_requires=[
         "singer-python==6.1.1",
         "requests==2.32.3",
+        'pyhumps==3.8.0',
     ],
     extras_require={
         "dev": [
@@ -23,7 +24,7 @@ setup(
           [console_scripts]
           tap-youtube-analytics=tap_youtube_analytics:main
       """,
-    packages=["tap-youtube-analytics"],
+    packages=find_packages(),
     package_data={
         "tap_youtube_analytics": ["schemas/*.json", "*.json"],
     },
