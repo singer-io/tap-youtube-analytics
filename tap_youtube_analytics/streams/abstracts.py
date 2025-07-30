@@ -1,3 +1,5 @@
+import json
+import os
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Tuple, List
 from singer import (
@@ -10,8 +12,9 @@ from singer import (
     write_schema,
     metadata
 )
+import hashlib
 import humps
-
+# get_abs_pathfrom tap_youtube_analytics.schema import 
 LOGGER = get_logger()
 
 
@@ -94,7 +97,7 @@ class BaseStream(ABC):
         """
 
 
-    def get_records(self) -> List:
+    def get_records(self, isreport=False) -> List:
         """Interacts with api client interaction and pagination."""
         # self.params["maxResults"] = self.pamax_results
         total_count = 0
@@ -111,10 +114,14 @@ class BaseStream(ABC):
             if self.params.items():
                 querystring = "&".join(["%s=%s" % (key, value) for (key, value) in self.params.items()])
 
+            if isreport:
+                url = self.client.reporting_url
+            else:
+                url=self.client.base_url,
             response = {}
             response = self.client.get(
                 # self.client.base_url, self.path, self.params, self.endpoint   # self.headers 3rd argument is not used
-                url=self.client.base_url,
+                url=url,
                 path=self.path,
                 params=self.params,
                 endpoint=self.endpoint
@@ -176,6 +183,58 @@ class BaseStream(ABC):
         # denest published_at
         published_at = new_record.get("snippet", {}).get("published_at")
         new_record["published_at"] = published_at
+
+        return new_record
+
+    
+    def hash_data(self, data):
+        """Create MD5 hash key for data element
+        Prepare the project id hash"""
+        hash_id = hashlib.md5()
+        hash_id.update(repr(data).encode('utf-8'))
+
+        return hash_id.hexdigest()
+    
+    # dim_lookup_map.json: code to description mapping dictionary for each dimension
+    # Created from Dimensions lookup tables here:
+    #   https://developers.google.com/youtube/reporting/v1/reports/dimensions#Annotation_Dimensions
+    # Google Sheet for creating/maintaining dim_lookup_map.json:
+    #   https://docs.google.com/spreadsheets/d/1qR1kCiqwcvkZL4z9e0hxWa1kokesCSRv4LLyPmnnuUI/edit?usp=sharing
+    def transform_report_record(self, record, dimensions, report):
+        """Transform report records"""
+
+        new_record = record.copy()
+        # os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
+        map_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'dim_lookup_map.json')
+        with open(map_path) as file:
+            dim_lookup_map = json.load(file)
+
+        dimension_values = {}
+
+        for key, val in list(record.items()):
+            # Add dimension key-val to dimension_values dictionary
+            if key in dimensions:
+                dimension_values[key] = val
+
+            # Transform dim values from codes to names using dim_lookup_map
+            if key in dim_lookup_map:
+                # lookup new_val, with a default for existing val (if not found)
+                new_val = dim_lookup_map[key].get(val, val)
+                if val == new_val:
+                    LOGGER.warning(f"dim_lookup_map value not found; key: {key}, value: {val}")
+                new_record[key] = new_val
+            else:
+                new_record[key] = val
+
+        # Add report fields to data
+        new_record['report_id'] = report.get('id')
+        new_record['report_type_id'] = report.get('reportTypeId')
+        new_record['report_name'] = report.get('name')
+        new_record['create_time'] = report.get('createTime')
+
+        # Create unique md5 hash key for dimension_values
+        dims_md5 = str(self.hash_data(json.dumps(dimension_values, sort_keys=True)))
+        new_record['dimensions_hash_key'] = dims_md5
 
         return new_record
 
@@ -265,6 +324,38 @@ class FullTableStream(BaseStream):
             for record in self.get_records():
                 transformed_record = transformer.transform(
                     self.transform_data_record(record), self.schema, self.metadata
+                )
+                if self.is_selected:
+                    write_record(self.tap_stream_id, transformed_record)
+                    counter.increment()
+
+                for child in self.child_to_sync:
+                    child.sync(state=state, transformer=transformer, parent_obj=record)
+
+            return counter.value
+
+class ReportStream(IncrementalStream):
+    """
+    A base stream for different types of reports. Inherits from IncrementalStream
+    to handle incremental syncing for each report.
+    """
+    def get_url_endpoint(self, parent_obj: Dict = None) -> str:
+        """Get the URL endpoint for the stream"""
+        return self.client.reporting_url
+
+    def sync(
+        self,
+        state: Dict,
+        transformer: Transformer,
+        parent_obj: Dict = None,
+    ) -> Dict:
+        """Abstract implementation for `type: Fulltable` stream."""
+        self.url_endpoint = self.get_url_endpoint(parent_obj)
+        self.update_params()
+        with metrics.record_counter(self.tap_stream_id) as counter:
+            for record in self.get_records(isreport=True):
+                transformed_record = transformer.transform(
+                    self.transform_report_record(record, dimensions, report), self.schema, self.metadata
                 )
                 if self.is_selected:
                     write_record(self.tap_stream_id, transformed_record)

@@ -20,7 +20,6 @@ class Playlists(FullTableStream):
     key_properties = ["id"]
     replication_method = "FULL_TABLE"
     params = {"maxResults": 1, "part": "id,contentDetails,player,snippet,status"}
-    # "channelId": "{parent_id}",
     data_key = "items"
     path = "playlists"
     endpoint = "playlists"
