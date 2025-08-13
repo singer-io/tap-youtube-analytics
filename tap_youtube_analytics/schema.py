@@ -14,8 +14,7 @@ def get_abs_path(path: str) -> str:
 
 
 def load_schema_references() -> Dict:
-    """Load the schema files from the schema folder and return the schema
-    references."""
+    """Load the shared schema files from the schema/shared folder and return references."""
     shared_schema_path = get_abs_path("schemas/shared")
 
     shared_file_names = []
@@ -34,38 +33,70 @@ def load_schema_references() -> Dict:
     return refs
 
 
+def _load_schema_for_stream(stream_name: str) -> Dict:
+    """
+    Try to load a schema specific to the stream.
+    If it doesn't exist, fall back to schemas/reports.json.
+    """
+    candidate = get_abs_path(f"schemas/{stream_name}.json")
+    fallback = get_abs_path("schemas/reports.json")
+
+    if os.path.exists(candidate):
+        path = candidate
+    elif os.path.exists(fallback):
+        LOGGER.info(
+            "Schema for stream '%s' not found at %s. Falling back to %s.",
+            stream_name, candidate, fallback
+        )
+        path = fallback
+    else:
+        # Be explicit so we don't hide real packaging issues
+        raise FileNotFoundError(
+            f"No schema file found for stream '{stream_name}'. "
+            f"Tried: {candidate} and fallback: {fallback}"
+        )
+
+    with open(path) as f:
+        return json.load(f)
+
+
 def get_schemas() -> Tuple[Dict, Dict]:
-    """Load the schema references, prepare metadata for each streams and return
-    schema and metadata for the catalog."""
-    schemas = {}
-    field_metadata = {}
+    """
+    Load the schema references, prepare metadata for each stream,
+    and return (schemas, field_metadata) for the catalog.
+    """
+    schemas: Dict[str, Dict] = {}
+    field_metadata: Dict[str, Dict] = {}
 
     refs = load_schema_references()
+
     for stream_name, stream_obj in STREAMS.items():
-        schema_path = get_abs_path(f"schemas/{stream_name}.json")
-        with open(schema_path) as file:
-            schema = json.load(file)
+        # Load per-stream schema or fallback to reports.json
+        raw_schema = _load_schema_for_stream(stream_name)
 
+        # Resolve $ref entries against shared refs
+        schema = singer.resolve_schema_references(raw_schema, refs)
+
+        # Save the resolved schema
         schemas[stream_name] = schema
-        schema = singer.resolve_schema_references(schema, refs)
 
-        mdata = metadata.new()
+        # Build Singer metadata
         mdata = metadata.get_standard_metadata(
             schema=schema,
-            key_properties=getattr(stream_obj, "key_properties"),
-            valid_replication_keys=(getattr(stream_obj, "replication_keys") or []),
-            replication_method=getattr(stream_obj, "replication_method"),
+            key_properties=getattr(stream_obj, "key_properties", []),
+            valid_replication_keys=(getattr(stream_obj, "replication_keys", []) or []),
+            replication_method=getattr(stream_obj, "replication_method", None),
         )
-        mdata = metadata.to_map(mdata)
+        m_map = metadata.to_map(mdata)
 
-        automatic_keys = getattr(stream_obj, "replication_keys") or []
-        for field_name in schema["properties"].keys():
+        # Mark replication keys as automatic
+        automatic_keys = getattr(stream_obj, "replication_keys", []) or []
+        for field_name in schema.get("properties", {}).keys():
             if field_name in automatic_keys:
-                mdata = metadata.write(
-                    mdata, ("properties", field_name), "inclusion", "automatic"
+                m_map = metadata.write(
+                    m_map, ("properties", field_name), "inclusion", "automatic"
                 )
 
-        mdata = metadata.to_list(mdata)
-        field_metadata[stream_name] = mdata
+        field_metadata[stream_name] = metadata.to_list(m_map)
 
     return schemas, field_metadata

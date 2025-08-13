@@ -52,6 +52,7 @@ class Client:
         self._session = session()
         self.base_url = "https://www.googleapis.com/youtube/v3"
         self.google_token_uri = "https://oauth2.googleapis.com/token"
+        self.reporting_url = "https://youtubereporting.googleapis.com/v1"
 
 
         config_request_timeout = config.get("request_timeout")
