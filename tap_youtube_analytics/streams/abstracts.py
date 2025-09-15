@@ -208,8 +208,12 @@ class BaseStream(ABC):
         new_record = record.copy()
         # os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
         map_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'dim_lookup_map.json')
-        with open(map_path) as file:
-            dim_lookup_map = json.load(file)
+        if os.path.exists(map_path):
+            with open(map_path) as file:
+                dim_lookup_map = json.load(file)
+        else:
+            LOGGER.warning(f"dim_lookup_map.json not found at {map_path}. Dimension values will not be mapped to names.")
+            dim_lookup_map = {}
 
         dimension_values = {}
 
