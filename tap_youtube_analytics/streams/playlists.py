@@ -45,7 +45,7 @@ class Playlists(FullTableStream):
                     transformed_record = transformer.transform(
                         self.transform_data_record(record), self.schema, self.metadata
                     )
-                    if self.is_selected:
+                    if self.is_selected():
                         write_record(self.tap_stream_id, transformed_record)
                         counter.increment()
 
