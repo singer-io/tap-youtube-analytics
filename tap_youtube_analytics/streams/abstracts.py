@@ -2,6 +2,8 @@ import json
 import os
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Tuple, List
+from datetime import datetime
+from dateutil import parser
 from singer import (
     Transformer,
     get_bookmark,
@@ -38,6 +40,7 @@ class BaseStream(ABC):
     parent = ""
     data_key = ""
     parent_bookmark_key = ""
+    _dim_lookup_map = None  # Class-level cache for dimension lookup map
 
     def __init__(self, client=None, catalog=None) -> None:
         self.client = client
@@ -69,7 +72,7 @@ class BaseStream(ABC):
 
     @property
     @abstractmethod
-    def key_properties(self) -> Tuple[str, str]:
+    def key_properties(self) -> List[str]:
         """List of key properties for stream."""
 
     def is_selected(self):
@@ -104,6 +107,8 @@ class BaseStream(ABC):
         page = 1
         is_next_page = True
         page_token = ""
+        consecutive_empty_pages = 0
+        max_empty_pages = 3  # Prevent infinite loops
 
         while is_next_page:
             if page > 1:
@@ -125,10 +130,11 @@ class BaseStream(ABC):
                 url=url,
                 path=self.path,
                 params=self.params,
-                endpoint=self.endpoint
+                endpoint=self.url_endpoint
             )
             if not response or response is None or response == {}:
                 LOGGER.info("Data not found for endpoint: %s", self.url_endpoint)
+                break
 
             total_results = response.get("pageInfo", {}).get("totalResults")
             results = response.get(self.data_key, [])
@@ -140,7 +146,12 @@ class BaseStream(ABC):
             LOGGER.info(f"Endpoint: {self.url_endpoint}, Page: {page}, Results: {from_count}-{to_count} of Total: {total_results}")
 
             if not results or results is None or results == []:
-                yield None
+                consecutive_empty_pages += 1
+                if consecutive_empty_pages >= max_empty_pages:
+                    LOGGER.warning(f"Breaking pagination after {max_empty_pages} consecutive empty pages")
+                    break
+            else:
+                consecutive_empty_pages = 0  # Reset counter when we get data
 
             for result in response.get(self.data_key, []):
                 if result is None:
@@ -196,6 +207,22 @@ class BaseStream(ABC):
 
         return hash_id.hexdigest()
     
+    def _load_dim_lookup_map(self):
+        """Load and cache the dimension lookup map"""
+        if BaseStream._dim_lookup_map is None:
+            map_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'dim_lookup_map.json')
+            try:
+                if os.path.exists(map_path):
+                    with open(map_path) as file:
+                        BaseStream._dim_lookup_map = json.load(file)
+                        LOGGER.info("Loaded dimension lookup map from file")
+                else:
+                    LOGGER.warning(f"Dimension lookup map file not found at {map_path}, using empty map")
+                    BaseStream._dim_lookup_map = {}
+            except (IOError, json.JSONDecodeError) as e:
+                LOGGER.error(f"Failed to load dimension lookup map: {e}")
+                BaseStream._dim_lookup_map = {}
+        return BaseStream._dim_lookup_map
         
     # dim_lookup_map.json: code to description mapping dictionary for each dimension
     # Created from Dimensions lookup tables here:
@@ -206,14 +233,7 @@ class BaseStream(ABC):
         """Transform report records"""
 
         new_record = record.copy()
-        # os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
-        map_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'dim_lookup_map.json')
-        if os.path.exists(map_path):
-            with open(map_path) as file:
-                dim_lookup_map = json.load(file)
-        else:
-            LOGGER.warning(f"dim_lookup_map.json not found at {map_path}. Dimension values will not be mapped to names.")
-            dim_lookup_map = {}
+        dim_lookup_map = self._load_dim_lookup_map()
 
         dimension_values = {}
 
@@ -243,6 +263,30 @@ class BaseStream(ABC):
         new_record['dimensions_hash_key'] = dims_md5
 
         return new_record
+
+    def append_times_to_dates(self, record: Dict) -> None:
+        """Append time portion to date-only fields to ensure proper datetime format.
+        
+        This method ensures that date fields have time components for consistent
+        datetime handling across the pipeline.
+        """
+        date_fields = ['published_at', 'create_time', 'updated_at', 'scheduled_start_time', 'scheduled_end_time']
+        
+        for field in date_fields:
+            if field in record and record[field]:
+                try:
+                    # Parse the date string
+                    date_value = record[field]
+                    if isinstance(date_value, str):
+                        # If it's just a date (YYYY-MM-DD), append time
+                        if len(date_value) == 10 and 'T' not in date_value:
+                            record[field] = f"{date_value}T00:00:00Z"
+                        # If it's already a datetime string, ensure it has timezone
+                        elif 'T' in date_value and not date_value.endswith('Z') and '+' not in date_value:
+                            record[field] = f"{date_value}Z"
+                except (ValueError, TypeError) as e:
+                    LOGGER.warning(f"Failed to process date field {field}: {e}")
+                    continue
     
 
 class IncrementalStream(BaseStream):
@@ -311,7 +355,7 @@ class IncrementalStream(BaseStream):
 
 
 class FullTableStream(BaseStream):
-    """Base Class for Incremental Stream."""
+    """Base Class for Full Table Stream."""
 
     replication_method = "FULL_TABLE"
     forced_replication_method = "FULL_TABLE"
