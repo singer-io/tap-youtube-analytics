@@ -53,9 +53,9 @@ class PlaylistItems(IncrementalStream):
                     playlist_id = playlist.get("id")
                     self.params = {"maxResults": 50, "part": "id,contentDetails,snippet,status"}
                     self.params["playlistId"] = playlist_id
-                    self.path="playlistItems"
-                    self.endpoint="playlist_items"
-                    self.data_key="items"
+                    self.path = "playlistItems"
+                    self.endpoint = "playlist_items"
+                    self.data_key = "items"
 
                     records = self.get_records()
                     for record in records:
