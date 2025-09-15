@@ -1,5 +1,4 @@
 from typing import Dict, Iterator, List
-from singer import get_logger
 from singer import (
     Transformer,
     get_bookmark,
