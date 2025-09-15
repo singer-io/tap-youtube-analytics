@@ -24,7 +24,7 @@ def raise_for_error(response: requests.Response) -> None:
         response_json = response.json()
     except Exception:
         response_json = {}
-    if response.status_code != [200, 201, 204]:
+    if response.status_code not in [200, 201, 204]:
         if response_json.get("error"):
             message = f"HTTP-error-code: {response.status_code}, Error: {response_json.get('error')}"
         else:

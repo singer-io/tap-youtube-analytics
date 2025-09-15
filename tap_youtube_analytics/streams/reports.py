@@ -9,13 +9,13 @@ class ChannelBasicStream(ReportStream):
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "channel_basic_a2"
+    report_type = "channel_basic_a3"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status", 
         "country_code"
     ]
     metrics = [
-        "views", "comments", "likes", "dislikes", "videos_added_to_playlists", 
+        "engaged_views", "views", "comments", "likes", "dislikes", "videos_added_to_playlists", 
         "videos_removed_from_playlists", "shares", "watch_time_minutes", 
         "average_view_duration_seconds", "average_view_duration_percentage", 
         "annotation_click_through_rate", "annotation_close_rate", "annotation_impressions", 
@@ -34,13 +34,13 @@ class ChannelProvinceStream(ReportStream):
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "channel_province_a2"
+    report_type = "channel_province_a3"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status", 
         "country_code", "province_code"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds", 
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds", 
         "average_view_duration_percentage", "annotation_click_through_rate", 
         "annotation_close_rate", "annotation_impressions", 
         "annotation_clickable_impressions", "annotation_closable_impressions", 
@@ -51,59 +51,59 @@ class ChannelProvinceStream(ReportStream):
 
 
 class ChannelPlaybackLocationStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "channel_playback_location"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "channel_playback_location_a2"
+    report_type = "channel_playback_location_a3"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status", 
         "country_code", "playback_location_type", "playback_location_detail"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds", 
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds", 
         "average_view_duration_percentage", "red_views", "red_watch_time_minutes"
     ]
 
 
 class ChannelTrafficSourceStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "channel_traffic_source"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "channel_traffic_source_a2"
+    report_type = "channel_traffic_source_a3"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status", 
         "country_code", "traffic_source_type", "traffic_source_detail"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds", 
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds", 
         "average_view_duration_percentage", "red_views", "red_watch_time_minutes"
     ]
 
 class ChannelDeviceOSStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "channel_device_os"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "channel_device_os_a2"
+    report_type = "channel_device_os_a3"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status",
         "country_code", "device_type", "operating_system"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds",
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds",
         "average_view_duration_percentage", "red_views", "red_watch_time_minutes"
     ]
 
 class ChannelDemographicsStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "channel_demographics"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
@@ -112,21 +112,20 @@ class ChannelDemographicsStream(ReportStream):
     report_type = "channel_demographics_a1"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status",
-        "country_code", "device_type", "operating_system"
+        "country_code", "age_group", "gender"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds",
-        "average_view_duration_percentage", "red_views", "red_watch_time_minutes"
+        "views_percentage"
     ]
 
 class ChannelSharingServiceStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "channel_sharing_service"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "channel_sharing_service_a1"
+    report_type = "channel_sharing_service_a2"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status",
         "country_code", "sharing_service"
@@ -134,13 +133,13 @@ class ChannelSharingServiceStream(ReportStream):
     metrics = ["shares"]
 
 class ChannelAnnotationsStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "channel_annotations"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "channel_annotations_a1"
+    report_type = "channel_annotations_a2"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status",
         "country_code", "annotation_type", "annotation_id"
@@ -152,13 +151,13 @@ class ChannelAnnotationsStream(ReportStream):
     ]
 
 class ChannelCardsStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "channel_cards"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "channel_cards_a1"
+    report_type = "channel_cards_a2"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status",
         "country_code", "card_type", "card_id"
@@ -169,13 +168,13 @@ class ChannelCardsStream(ReportStream):
     ]
 
 class ChannelEndScreensStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "channel_end_screens"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "channel_end_screens_a1"
+    report_type = "channel_end_screens_a2"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status",
         "country_code", "end_screen_element_type", "end_screen_element_id"
@@ -185,156 +184,156 @@ class ChannelEndScreensStream(ReportStream):
     ]
 
 class ChannelSubtitlesStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "channel_subtitles"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "channel_subtitles_a2"
+    report_type = "channel_subtitles_a3"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status",
-        "country_code", "subtitle_language"
+        "country_code", "subtitle_language", "subtitle_language_autotranslated"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds",
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds",
         "average_view_duration_percentage", "red_views", "red_watch_time_minutes"
     ]
 
 class ChannelCombinedStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "channel_combined"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "channel_combined_a2"
+    report_type = "channel_combined_a3"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status",
         "country_code", "playback_location_type", "traffic_source_type", "device_type", "operating_system"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds",
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds",
         "average_view_duration_percentage", "red_views", "red_watch_time_minutes"
     ]
 
 class PlaylistBasicStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "playlist_basic"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "playlist_basic_a1"
+    report_type = "playlist_basic_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand",
         "subscribed_status", "country_code"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds",
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds",
         "playlist_starts", "playlist_saves_added", "playlist_saves_removed"
     ]
 
 class PlaylistProvinceStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "playlist_province"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "playlist_province_a1"
+    report_type = "playlist_province_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand",
         "subscribed_status", "country_code", "province_code"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds",
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds",
         "playlist_starts", "playlist_saves_added", "playlist_saves_removed"
     ]
 
 class PlaylistPlaybackLocationStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "playlist_playback_location"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "playlist_playback_location_a1"
+    report_type = "playlist_playback_location_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand",
         "subscribed_status", "country_code", "playback_location_type", "playback_location_detail"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds",
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds",
         "playlist_starts", "playlist_saves_added", "playlist_saves_removed"
     ]
 
 class PlaylistTrafficSourceStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "playlist_traffic_source"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "playlist_traffic_source_a1"
+    report_type = "playlist_traffic_source_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand",
         "subscribed_status", "country_code", "traffic_source_type", "traffic_source_detail"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds",
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds",
         "playlist_starts", "playlist_saves_added", "playlist_saves_removed"
     ]
 
 class PlaylistDeviceOSStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "playlist_device_os"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "playlist_device_os_a1"
+    report_type = "playlist_device_os_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand",
         "subscribed_status", "country_code", "device_type", "operating_system"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds",
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds",
         "playlist_starts", "playlist_saves_added", "playlist_saves_removed"
     ]
 
 class PlaylistCombinedStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "playlist_combined"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "playlist_combined_a1"
+    report_type = "playlist_combined_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand",
         "subscribed_status", "country_code", "playback_location_type", "traffic_source_type",
         "device_type", "operating_system"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds",
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds",
         "playlist_starts", "playlist_saves_added", "playlist_saves_removed"
     ]
 
 class ContentOwnerBasicStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_basic"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "content_owner_basic_a3"
+    report_type = "content_owner_basic_a4"
     dimensions = [
         "date", "channel_id", "video_id", "claimed_status", "uploader_type", 
         "live_or_on_demand", "subscribed_status", "country_code"
     ]
     metrics = [
-        "views", "comments", "shares", "watch_time_minutes", "average_view_duration_seconds", 
+        "engaged_views", "views", "comments", "shares", "watch_time_minutes", "average_view_duration_seconds", 
         "average_view_duration_percentage", "annotation_click_through_rate", "annotation_close_rate", 
         "annotation_impressions", "annotation_clickable_impressions", "annotation_closable_impressions", 
         "annotation_clicks", "annotation_closes", "card_click_rate", "card_teaser_click_rate", 
@@ -344,19 +343,19 @@ class ContentOwnerBasicStream(ReportStream):
     ]
 
 class ContentOwnerProvinceStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_province"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "content_owner_province_a2"
+    report_type = "content_owner_province_a3"
     dimensions = [
-        "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand", "subscribed_status", 
-        "country_code", "playback_location_type", "traffic_source_type", "device_type", "operating_system"
+        "date", "channel_id", "video_id", "claimed_status", "uploader_type", "live_or_on_demand", "subscribed_status", 
+        "country_code", "province_code"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds", "average_view_duration_percentage", 
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds", "average_view_duration_percentage", 
         "annotation_click_through_rate", "annotation_close_rate", "annotation_impressions", 
         "annotation_clickable_impressions", "annotation_closable_impressions", "annotation_clicks", 
         "annotation_closes", "card_click_rate", "card_teaser_click_rate", "card_impressions", 
@@ -364,58 +363,58 @@ class ContentOwnerProvinceStream(ReportStream):
     ]
 
 class ContentOwnerPlaybackLocationStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_playback_location"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "content_owner_playback_location_a2"
+    report_type = "content_owner_playback_location_a3"
     dimensions = [
         "date", "channel_id", "video_id", "claimed_status", "uploader_type", "live_or_on_demand", 
         "subscribed_status", "country_code", "playback_location_type", "playback_location_detail"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds", "average_view_duration_percentage", 
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds", "average_view_duration_percentage", 
         "red_views", "red_watch_time_minutes"
     ]
 
 class ContentOwnerTrafficSourceStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_traffic_source"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "content_owner_traffic_source_a2"
+    report_type = "content_owner_traffic_source_a3"
     dimensions = [
         "date", "channel_id", "video_id", "claimed_status", "uploader_type", "live_or_on_demand", 
         "subscribed_status", "country_code", "traffic_source_type", "traffic_source_detail"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds", "average_view_duration_percentage", 
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds", "average_view_duration_percentage", 
         "red_views", "red_watch_time_minutes"
     ]
 
 class ContentOwnerDeviceOSStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_device_os"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "content_owner_device_os_a2"
+    report_type = "content_owner_device_os_a3"
     dimensions = [
         "date", "channel_id", "video_id", "claimed_status", "uploader_type", "live_or_on_demand", 
         "subscribed_status", "country_code", "device_type", "operating_system"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds", "average_view_duration_percentage", 
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds", "average_view_duration_percentage", 
         "red_views", "red_watch_time_minutes"
     ]
 
 class ContentOwnerDemographicsStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_demographics"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
@@ -429,13 +428,13 @@ class ContentOwnerDemographicsStream(ReportStream):
     metrics = ["views_percentage"]
 
 class ContentOwnerSharingServiceStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_sharing_service"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "content_owner_demographics_a1"
+    report_type = "content_owner_sharing_service_a1"
     dimensions = [
         "date", "channel_id", "video_id", "claimed_status", "uploader_type", "live_or_on_demand", 
         "subscribed_status", "country_code", "sharing_service"
@@ -443,7 +442,7 @@ class ContentOwnerSharingServiceStream(ReportStream):
     metrics = ["shares"]
 
 class ContentOwnerAnnotationsStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_annotations"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
@@ -461,7 +460,7 @@ class ContentOwnerAnnotationsStream(ReportStream):
     ]
 
 class ContentOwnerCardsStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_cards"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
@@ -478,7 +477,7 @@ class ContentOwnerCardsStream(ReportStream):
     ]
 
 class ContentOwnerEndScreensStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_end_screens"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
@@ -494,146 +493,146 @@ class ContentOwnerEndScreensStream(ReportStream):
     ]
 
 class ContentOwnerSubtitlesStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_subtitles"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "content_owner_subtitles_a2"
+    report_type = "content_owner_subtitles_a3"
     dimensions = [
         "date", "channel_id", "video_id", "claimed_status", "uploader_type", "live_or_on_demand", 
-        "subscribed_status", "country_code", "subtitle_language"
+        "subscribed_status", "country_code", "subtitle_language", "subtitle_language_autotranslated"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds", "average_view_duration_percentage", 
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds", "average_view_duration_percentage", 
         "red_views", "red_watch_time_minutes"
     ]
 
 class ContentOwnerCombinedStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_combined"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "content_owner_combined_a2"
+    report_type = "content_owner_combined_a3"
     dimensions = [
         "date", "channel_id", "video_id", "claimed_status", "uploader_type", "live_or_on_demand", 
         "subscribed_status", "country_code", "playback_location_type", "traffic_source_type", 
         "device_type", "operating_system"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds", "average_view_duration_percentage", 
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds", "average_view_duration_percentage", 
         "red_views", "red_watch_time_minutes"
     ]
 
 class ContentOwnerPlaylistBasicStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_playlist_basic"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "content_owner_playlist_basic_a1"
+    report_type = "content_owner_playlist_basic_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand", 
         "subscribed_status", "country_code"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds", 
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds", 
         "playlist_starts", "playlist_saves_added", "playlist_saves_removed"
     ]
 
 class ContentOwnerPlaylistProvinceStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_playlist_province"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "content_owner_playlist_province_a1"
+    report_type = "content_owner_playlist_province_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand", 
         "subscribed_status", "country_code", "province_code"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds", 
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds", 
         "playlist_starts", "playlist_saves_added", "playlist_saves_removed"
     ]
 
 class ContentOwnerPlaylistPlaybackLocationStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_playlist_playback_location"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "content_owner_playlist_playback_location_a1"
+    report_type = "content_owner_playlist_playback_location_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand", 
         "subscribed_status", "country_code", "playback_location_type", 
         "playback_location_detail"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds", 
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds", 
         "playlist_starts", "playlist_saves_added", "playlist_saves_removed"
     ]
 
 class ContentOwnerPlaylistTrafficSourceStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_playlist_traffic_source"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "content_owner_playlist_traffic_source_a1"
+    report_type = "content_owner_playlist_traffic_source_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand", 
         "subscribed_status", "country_code", "traffic_source_type", "traffic_source_detail"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds", 
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds", 
         "playlist_starts", "playlist_saves_added", "playlist_saves_removed"
     ]
 
 class ContentOwnerPlaylistDeviceOSStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_playlist_device_os"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "content_owner_playlist_device_os_a1"
+    report_type = "content_owner_playlist_device_os_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand", 
         "subscribed_status", "country_code", "device_type", "operating_system"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds", 
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds", 
         "playlist_starts", "playlist_saves_added", "playlist_saves_removed"
     ]
 
 class ContentOwnerPlaylistCombinedStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_playlist_combined"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "content_owner_playlist_combined_a1"
+    report_type = "content_owner_playlist_combined_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand", 
         "subscribed_status", "country_code", "playback_location_type", 
         "traffic_source_type", "device_type", "operating_system"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds", 
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds", 
         "playlist_starts", "playlist_saves_added", "playlist_saves_removed"
     ]
 
 class ContentOwnerAdRatesStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_ad_rates"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
@@ -649,13 +648,13 @@ class ContentOwnerAdRatesStream(ReportStream):
     ]
 
 class ContentOwnerEstimatedRevenueStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_estimated_revenue"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "content_owner_estimated_revenue_a1"
+    report_type = "content_owner_estimated_revenue_a2"
     dimensions = [
         "date", "channel_id", "video_id", "claimed_status", "uploader_type", 
         "country_code"
@@ -669,13 +668,13 @@ class ContentOwnerEstimatedRevenueStream(ReportStream):
     ]
 
 class ContentOwnerAssetEstimatedRevenueStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_asset_estimated_revenue"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "content_owner_asset_estimated_revenue_a1"
+    report_type = "content_owner_asset_estimated_revenue_a2"
     dimensions = [
         "date", "channel_id", "video_id", "asset_id", "claimed_status", 
         "uploader_type", "country_code"
@@ -687,19 +686,19 @@ class ContentOwnerAssetEstimatedRevenueStream(ReportStream):
     ]
 
 class ContentOwnerAssetBasicStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_asset_basic"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "content_owner_asset_basic_a2"
+    report_type = "content_owner_asset_basic_a3"
     dimensions = [
         "date", "channel_id", "video_id", "asset_id", "claimed_status", 
         "uploader_type", "live_or_on_demand", "subscribed_status", "country_code"
     ]
     metrics = [
-        "views", "comments", "likes", "dislikes", "videos_added_to_playlists", 
+        "engaged_views", "views", "comments", "likes", "dislikes", "videos_added_to_playlists", 
         "videos_removed_from_playlists", "shares", "watch_time_minutes", 
         "average_view_duration_seconds", "average_view_duration_percentage", 
         "annotation_click_through_rate", "annotation_close_rate", "annotation_impressions", 
@@ -710,19 +709,19 @@ class ContentOwnerAssetBasicStream(ReportStream):
     ]
 
 class ContentOwnerAssetProvinceStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_asset_province"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "content_owner_asset_province_a2"
+    report_type = "content_owner_asset_province_a3"
     dimensions = [
         "date", "channel_id", "video_id", "asset_id", "claimed_status", "uploader_type", 
         "live_or_on_demand", "subscribed_status", "country_code", "province_code"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds", 
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds", 
         "average_view_duration_percentage", "annotation_click_through_rate", 
         "annotation_close_rate", "annotation_impressions", "annotation_clickable_impressions", 
         "annotation_closable_impressions", "annotation_clicks", "annotation_closes", 
@@ -731,60 +730,60 @@ class ContentOwnerAssetProvinceStream(ReportStream):
     ]
 
 class ContentOwnerAssetPlaybackLocationStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_asset_playback_location"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "content_owner_asset_playback_location_a2"
+    report_type = "content_owner_asset_playback_location_a3"
     dimensions = [
         "date", "channel_id", "video_id", "asset_id", "claimed_status", "uploader_type", 
         "live_or_on_demand", "subscribed_status", "country_code", "playback_location_type", 
         "playback_location_detail"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds", 
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds", 
         "average_view_duration_percentage", "red_views", "red_watch_time_minutes"
     ]
 
 class ContentOwnerAssetTrafficSourceStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_asset_traffic_source"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "content_owner_asset_traffic_source_a2"
+    report_type = "content_owner_asset_traffic_source_a3"
     dimensions = [
         "date", "channel_id", "video_id", "asset_id", "claimed_status", "uploader_type", 
         "live_or_on_demand", "subscribed_status", "country_code", "traffic_source_type", 
         "traffic_source_detail"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds", 
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds", 
         "average_view_duration_percentage", "red_views", "red_watch_time_minutes"
     ]
 
 class ContentOwnerAssetDeviceOSStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_asset_device_os"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "content_owner_asset_device_os_a2"
+    report_type = "content_owner_asset_device_os_a3"
     dimensions = [
         "date", "channel_id", "video_id", "asset_id", "claimed_status", "uploader_type", 
         "live_or_on_demand", "subscribed_status", "country_code", "device_type", "operating_system"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds", 
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds", 
         "average_view_duration_percentage", "red_views", "red_watch_time_minutes"
     ]
 
 class ContentOwnerAssetDemographicsStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_asset_demographics"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
@@ -798,7 +797,7 @@ class ContentOwnerAssetDemographicsStream(ReportStream):
     metrics = ["views_percentage"]
 
 class ContentOwnerAssetSharingServiceStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_asset_sharing_service"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
@@ -812,7 +811,7 @@ class ContentOwnerAssetSharingServiceStream(ReportStream):
     metrics = ["shares"]
 
 class ContentOwnerAssetAnnotationsStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_asset_annotations"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
@@ -830,7 +829,7 @@ class ContentOwnerAssetAnnotationsStream(ReportStream):
     ]
 
 class ContentOwnerAssetCardsStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_asset_cards"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
@@ -847,7 +846,7 @@ class ContentOwnerAssetCardsStream(ReportStream):
     ]
 
 class ContentOwnerAssetEndScreensStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_asset_end_screens"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
@@ -864,19 +863,19 @@ class ContentOwnerAssetEndScreensStream(ReportStream):
     ]
 
 class ContentOwnerAssetCombinedStream(ReportStream):
-    tap_stream_id = "channel_province"
+    tap_stream_id = "content_owner_asset_combined"
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
     path = "jobs"
     endpoint = "jobs"
-    report_type = "content_owner_asset_combined_a2"
+    report_type = "content_owner_asset_combined_a3"
     dimensions = [
         "date", "channel_id", "video_id", "asset_id", "claimed_status", "uploader_type", 
         "live_or_on_demand", "subscribed_status", "country_code", "playback_location_type", 
         "traffic_source_type", "device_type", "operating_system"
     ]
     metrics = [
-        "views", "watch_time_minutes", "average_view_duration_seconds", 
+        "engaged_views", "views", "watch_time_minutes", "average_view_duration_seconds", 
         "average_view_duration_percentage", "red_views", "red_watch_time_minutes"
     ]

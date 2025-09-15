@@ -4,14 +4,14 @@ from setuptools import setup, find_packages
 setup(
     name="tap-youtube-analytics",
     version="1.0.0",
-    description="Singer.io tap for extracting data from youtube-analytics API",
+    description="Singer tap for YouTube Analytics API",
     author="Stitch",
     url="http://singer.io",
     classifiers=["Programming Language :: Python :: 3 :: Only"],
     py_modules=["tap_youtube_analytics"],
     install_requires=[
-        "singer-python==6.1.1",
-        "requests==2.32.3",
+        "singer-python>=5.0.0",
+        "requests>=2.20.0",
         'pyhumps==3.8.0',
     ],
     extras_require={
@@ -29,4 +29,5 @@ setup(
         "tap_youtube_analytics": ["schemas/*.json", "*.json"],
     },
     include_package_data=True,
+    python_requires=">=3.7",
 )
