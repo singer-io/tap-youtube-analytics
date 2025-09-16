@@ -12,11 +12,11 @@ class TestSync(unittest.TestCase):
         self.mock_catalog = MagicMock(spec=Catalog)
         self.mock_state = {}
 
-    @patch("tap_youtube_analytics.sync.LOGGER.info")
+    @patch("tap_youtube_analytics.sync.STREAMS")
     @patch("tap_youtube_analytics.sync.singer.get_currently_syncing")
     @patch("tap_youtube_analytics.sync.singer.Transformer")
-    @patch("tap_youtube_analytics.sync.STREAMS")
-    def test_sync_success(self, mock_streams, mock_transformer, mock_get_currently_syncing, mock_logger_info):
+    @patch("tap_youtube_analytics.sync.LOGGER.info")
+    def test_sync_success(self, mock_logger_info, mock_transformer, mock_get_currently_syncing, mock_streams):
         """Test successful sync"""
         mock_stream_instance = MagicMock() 
         mock_stream_instance.is_selected.return_value = True
@@ -46,11 +46,11 @@ class TestSync(unittest.TestCase):
         for expected_call in expected_calls:
             self.assertIn(expected_call, mock_logger_info.call_args_list)
 
-    @patch("tap_youtube_analytics.sync.LOGGER.info")
+    @patch("tap_youtube_analytics.sync.STREAMS")
     @patch("tap_youtube_analytics.sync.singer.get_currently_syncing")
     @patch("tap_youtube_analytics.sync.singer.Transformer")
-    @patch("tap_youtube_analytics.sync.STREAMS")
-    def test_sync_with_parent_stream(self, mock_streams, mock_transformer, mock_get_currently_syncing, mock_logger_info):
+    @patch("tap_youtube_analytics.sync.LOGGER.info")
+    def test_sync_with_parent_stream(self, mock_logger_info, mock_transformer, mock_get_currently_syncing, mock_streams):
         """Test sync with a parent stream"""
         mock_stream_instance = MagicMock()
         mock_stream_instance.is_selected.return_value = True
@@ -83,14 +83,22 @@ class TestSync(unittest.TestCase):
 
     @patch("tap_youtube_analytics.sync.singer.write_state")
     @patch("tap_youtube_analytics.sync.singer.get_currently_syncing")
-    def test_update_currently_syncing(self, mock_get_currently_syncing, mock_write_state):
+    @patch("tap_youtube_analytics.sync.singer.set_currently_syncing")
+    def test_update_currently_syncing(self, mock_set_currently_syncing, mock_get_currently_syncing, mock_write_state):
         """Test update_currently_syncing function"""
         mock_get_currently_syncing.return_value = "test_stream"
         state = {"currently_syncing": "test_stream"}
 
+        # Test with stream_name=None
         update_currently_syncing(state, None)
         self.assertNotIn("currently_syncing", state)
         mock_write_state.assert_called_once_with(state)
+        
+        # Test with a stream name
+        state = {}
+        update_currently_syncing(state, "new_stream")
+        mock_set_currently_syncing.assert_called_once_with(state, "new_stream")
+        mock_write_state.assert_called_with(state)
 
     @patch("tap_youtube_analytics.sync.STREAMS")
     def test_write_schema(self, mock_streams):

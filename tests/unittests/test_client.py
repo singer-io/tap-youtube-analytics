@@ -31,8 +31,8 @@ class TestClient(unittest.TestCase):
 
         self.client.check_api_credentials()
         self.assertEqual(self.client._Client__access_token, "test_access_token")
-        # Compare with timezone-naive datetime since client uses utcnow()
-        current_time = datetime.utcnow()
+        # Use timezone-aware datetime consistently
+        current_time = datetime.now(timezone.utc)
         self.assertTrue(self.client._Client__expires > current_time)
 
     @patch("requests.Session.post")
@@ -46,11 +46,11 @@ class TestClient(unittest.TestCase):
         with self.assertRaises(YoutubeAnalyticsError):
             self.client.check_api_credentials()
 
-    @patch.object(Client, 'check_api_credentials')
     @patch("requests.Session.request")
-    def test_make_request_success(self, mock_request, mock_check):
+    def test_make_request_success(self, mock_request):
         """Test successful HTTP request"""
-        # Set up valid token to avoid authentication calls
+        # More consistent approach: don't patch check_api_credentials 
+        # and just set up the necessary state directly
         self.client._Client__access_token = "valid_token"
         self.client._Client__expires = datetime.now(timezone.utc) + timedelta(hours=1)
         
@@ -63,9 +63,8 @@ class TestClient(unittest.TestCase):
         self.assertEqual(result, {"data": "test_data"})
 
     @patch('backoff.expo', return_value=0)  # Disable backoff delays
-    @patch.object(Client, 'check_api_credentials')
     @patch("requests.Session.request")
-    def test_make_request_rate_limit_error(self, mock_request, mock_check, mock_backoff):
+    def test_make_request_rate_limit_error(self, mock_request, mock_backoff):
         """Test rate limit error handling"""
         # Set up valid token to avoid authentication calls
         self.client._Client__access_token = "valid_token"
@@ -80,9 +79,8 @@ class TestClient(unittest.TestCase):
             self.client.get(path="test_path")
 
     @patch('backoff.expo', return_value=0)  # Disable backoff delays
-    @patch.object(Client, 'check_api_credentials')
     @patch("requests.Session.request")
-    def test_make_request_server_error(self, mock_request, mock_check, mock_backoff):
+    def test_make_request_server_error(self, mock_request, mock_backoff):
         """Test server error handling"""
         # Set up valid token to avoid authentication calls
         self.client._Client__access_token = "valid_token"
