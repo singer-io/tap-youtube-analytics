@@ -1,6 +1,6 @@
 import singer
 from typing import Dict
-from tap_youtube_analytics.streams import STREAMS
+from tap_youtube_analytics import streams
 from tap_youtube_analytics.client import Client
 
 LOGGER = singer.get_logger()
@@ -21,7 +21,7 @@ def write_schema(stream, client, streams_to_sync, catalog) -> None:
         stream.write_schema()
 
     for child in stream.children:
-        child_obj = STREAMS[child](client, catalog.get_stream(child))
+        child_obj = streams.STREAMS[child](client, catalog.get_stream(child))
         write_schema(child_obj, client, streams_to_sync, catalog)
         if child in streams_to_sync:
 
@@ -42,7 +42,7 @@ def sync(client: Client, config: Dict, catalog: singer.Catalog, state) -> None:
     with singer.Transformer() as transformer:
         for stream_name in streams_to_sync:
 
-            stream = STREAMS[stream_name](client, catalog.get_stream(stream_name))
+            stream = streams.STREAMS[stream_name](client, catalog.get_stream(stream_name))
             if stream.parent:
 
                 if stream.parent not in streams_to_sync:

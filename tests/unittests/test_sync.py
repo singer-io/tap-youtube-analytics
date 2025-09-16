@@ -13,7 +13,7 @@ class TestSync(unittest.TestCase):
         self.mock_catalog = MagicMock(spec=Catalog)
         self.mock_state = {}
 
-    @patch("tap_youtube_analytics.sync.LOGGER")
+    @patch("LOGGER")
     @patch("singer.Transformer")
     @patch("singer.get_currently_syncing")
     @patch("tap_youtube_analytics.streams.STREAMS")
@@ -48,7 +48,7 @@ class TestSync(unittest.TestCase):
             # Make sure we're checking against mock_logger.info.call_args_list
             self.assertIn(expected_call, mock_logger.info.call_args_list)
 
-    @patch("tap_youtube_analytics.sync.LOGGER")
+    @patch("LOGGER")
     @patch("singer.Transformer")
     @patch("singer.get_currently_syncing")
     @patch("tap_youtube_analytics.streams.STREAMS")
@@ -110,23 +110,23 @@ class TestSync(unittest.TestCase):
         mock_stream_instance.is_selected.return_value = True
         mock_stream_instance.children = ["child_stream"]
         mock_stream_instance.write_schema = MagicMock()
-        
+
         # Set child_to_sync as a simple list to avoid recursion
         mock_stream_instance.child_to_sync = []
-        
+
         # Create a separate mock for child streams to avoid recursion
         mock_child_stream = MagicMock()
         mock_child_stream.is_selected.return_value = True
         mock_child_stream.children = []  # No children to prevent recursion
         mock_child_stream.write_schema = MagicMock()
         mock_child_stream.child_to_sync = []
-        
+
         def mock_stream_factory(stream_name):
             if stream_name == "child_stream":
                 return lambda client, catalog_stream: mock_child_stream
             else:
                 return lambda client, catalog_stream: mock_stream_instance
-        
+
         mock_streams.__getitem__.side_effect = mock_stream_factory
 
         # Mock the catalog to return appropriate streams
@@ -139,7 +139,6 @@ class TestSync(unittest.TestCase):
 
         # Verify write_schema was called on the main stream
         mock_stream_instance.write_schema.assert_called_once()
-
-
+        
 if __name__ == "__main__":
     unittest.main()
