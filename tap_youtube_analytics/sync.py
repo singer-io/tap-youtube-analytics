@@ -21,16 +21,19 @@ def write_schema(stream, client, streams_to_sync, catalog) -> None:
         stream.write_schema()
 
     for child in stream.children:
+        # Optional guard to avoid KeyErrors if a child name is missing
+        if child not in streams.STREAMS:
+            LOGGER.warning(f"Child stream '{child}' not found in STREAMS; skipping.")
+            continue
+
         child_obj = streams.STREAMS[child](client, catalog.get_stream(child))
         write_schema(child_obj, client, streams_to_sync, catalog)
         if child in streams_to_sync:
-
             stream.child_to_sync.append(child_obj)
 
 
 def sync(client: Client, config: Dict, catalog: singer.Catalog, state) -> None:
     """Sync selected streams from catalog"""
-
     streams_to_sync = []
     for stream in catalog.get_selected_streams(state):
         streams_to_sync.append(stream.stream)
@@ -41,15 +44,15 @@ def sync(client: Client, config: Dict, catalog: singer.Catalog, state) -> None:
 
     with singer.Transformer() as transformer:
         for stream_name in streams_to_sync:
+            if stream_name not in streams.STREAMS:
+                LOGGER.warning(f"Stream '{stream_name}' not found in STREAMS; skipping.")
+                continue
 
             stream = streams.STREAMS[stream_name](client, catalog.get_stream(stream_name))
             if stream.parent:
-
                 if stream.parent not in streams_to_sync:
-
                     streams_to_sync.append(stream.parent)
                 continue
-
 
             write_schema(stream, client, streams_to_sync, catalog)
 
@@ -58,6 +61,4 @@ def sync(client: Client, config: Dict, catalog: singer.Catalog, state) -> None:
             total_records = stream.sync(state=state, transformer=transformer)
 
             update_currently_syncing(state, None)
-            LOGGER.info(
-                f"FINISHED Syncing: {stream_name}, total_records: {total_records}"
-            )
+            LOGGER.info(f"FINISHED Syncing: {stream_name}, total_records: {total_records}")
