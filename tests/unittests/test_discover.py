@@ -38,7 +38,7 @@ class TestDiscover(unittest.TestCase):
             # If it raises KeyError, that's also acceptable behavior
             pass
 
-    @patch("tap_youtube_analytics.discover.get_schemas")
+    @patch("tap_youtube_analytics.schema.get_schemas")
     def test_discover_with_mocked_schemas(self, mock_get_schemas):
         """Test discovery with properly mocked schemas"""
         mock_schemas = {

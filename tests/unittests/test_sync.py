@@ -1,4 +1,5 @@
 import unittest
+import singer
 from unittest.mock import patch, MagicMock, call
 from tap_youtube_analytics.sync import sync, update_currently_syncing, write_schema
 from tap_youtube_analytics.client import Client
@@ -13,9 +14,9 @@ class TestSync(unittest.TestCase):
         self.mock_state = {}
 
     @patch("tap_youtube_analytics.sync.LOGGER")
-    @patch("tap_youtube_analytics.sync.singer.Transformer")
-    @patch("tap_youtube_analytics.sync.singer.get_currently_syncing")
-    @patch("tap_youtube_analytics.sync.STREAMS")
+    @patch("singer.Transformer")
+    @patch("singer.get_currently_syncing")
+    @patch("tap_youtube_analytics.streams.STREAMS")
     def test_sync_success(self, mock_streams, mock_get_currently_syncing, mock_transformer, mock_logger):
         """Test successful sync"""
         mock_stream_instance = MagicMock() 
@@ -44,13 +45,13 @@ class TestSync(unittest.TestCase):
             call("FINISHED Syncing: test_stream, total_records: 10")
         ]
         for expected_call in expected_calls:
-            # Need to access mock_logger.info not mock_logger directly
+            # Make sure we're checking against mock_logger.info.call_args_list
             self.assertIn(expected_call, mock_logger.info.call_args_list)
 
     @patch("tap_youtube_analytics.sync.LOGGER")
-    @patch("tap_youtube_analytics.sync.singer.Transformer")
-    @patch("tap_youtube_analytics.sync.singer.get_currently_syncing")
-    @patch("tap_youtube_analytics.sync.STREAMS")
+    @patch("singer.Transformer")
+    @patch("singer.get_currently_syncing")
+    @patch("tap_youtube_analytics.streams.STREAMS")
     def test_sync_with_parent_stream(self, mock_streams, mock_get_currently_syncing, mock_transformer, mock_logger):
         """Test sync with a parent stream"""
         mock_stream_instance = MagicMock()
@@ -82,9 +83,9 @@ class TestSync(unittest.TestCase):
         # At minimum, the child stream should be logged
         self.assertTrue(child_stream_logged, "Child stream should be logged")
 
-    @patch("tap_youtube_analytics.sync.singer.write_state")
-    @patch("tap_youtube_analytics.sync.singer.get_currently_syncing")
-    @patch("tap_youtube_analytics.sync.singer.set_currently_syncing")
+    @patch("singer.write_state")
+    @patch("singer.get_currently_syncing")
+    @patch("singer.set_currently_syncing")
     def test_update_currently_syncing(self, mock_set_currently_syncing, mock_get_currently_syncing, mock_write_state):
         """Test update_currently_syncing function"""
         mock_get_currently_syncing.return_value = "test_stream"
@@ -101,7 +102,7 @@ class TestSync(unittest.TestCase):
         mock_set_currently_syncing.assert_called_once_with(state, "new_stream")
         mock_write_state.assert_called_with(state)
 
-    @patch("tap_youtube_analytics.sync.STREAMS")
+    @patch("tap_youtube_analytics.streams.STREAMS")
     def test_write_schema(self, mock_streams):
         """Test write_schema function"""
         # Create a mock stream that doesn't cause recursion
