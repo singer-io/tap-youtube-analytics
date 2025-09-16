@@ -1,7 +1,7 @@
 from typing import Any, Dict, Mapping, Optional, Tuple
 
 import backoff
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 import requests
 from requests import session
@@ -70,7 +70,8 @@ class Client:
                         max_tries=5,
                         factor=2)
     def check_api_credentials(self) -> None:
-        if self.__access_token is not None and self.__expires > datetime.utcnow():
+        # This line still has a timezone issue
+        if self.__access_token is not None and self.__expires > datetime.now(timezone.utc):
             return
 
         headers = {}
@@ -95,7 +96,8 @@ class Client:
 
         data = response.json()
         self.__access_token = data["access_token"]
-        self.__expires = datetime.utcnow() + timedelta(seconds=data["expires_in"])
+        # Make this timezone-aware as well
+        self.__expires = datetime.now(timezone.utc) + timedelta(seconds=data["expires_in"])
         LOGGER.info(f"Authorized, token expires = {self.__expires}")
 
     def get(self, path=None, url=None, **kwargs):
@@ -160,7 +162,7 @@ class Client:
             kwargs["data"] = json.dumps(kwargs["data"])
 
         with metrics.http_request_timer(endpoint) as timer:
-            response = self._session.request(method, url, **kwargs)
+            response = self._session.request(method, url, timeout=self.request_timeout, **kwargs)
             timer.tags[metrics.Tag.http_status_code] = response.status_code
 
         if response.status_code >= 500:

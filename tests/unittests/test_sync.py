@@ -12,11 +12,11 @@ class TestSync(unittest.TestCase):
         self.mock_catalog = MagicMock(spec=Catalog)
         self.mock_state = {}
 
-    @patch("tap_youtube_analytics.sync.STREAMS")
-    @patch("tap_youtube_analytics.sync.singer.get_currently_syncing")
+    @patch("tap_youtube_analytics.sync.LOGGER")
     @patch("tap_youtube_analytics.sync.singer.Transformer")
-    @patch("tap_youtube_analytics.sync.LOGGER.info")
-    def test_sync_success(self, mock_logger_info, mock_transformer, mock_get_currently_syncing, mock_streams):
+    @patch("tap_youtube_analytics.sync.singer.get_currently_syncing")
+    @patch("tap_youtube_analytics.sync.STREAMS")
+    def test_sync_success(self, mock_streams, mock_get_currently_syncing, mock_transformer, mock_logger):
         """Test successful sync"""
         mock_stream_instance = MagicMock() 
         mock_stream_instance.is_selected.return_value = True
@@ -44,13 +44,14 @@ class TestSync(unittest.TestCase):
             call("FINISHED Syncing: test_stream, total_records: 10")
         ]
         for expected_call in expected_calls:
-            self.assertIn(expected_call, mock_logger_info.call_args_list)
+            # Need to access mock_logger.info not mock_logger directly
+            self.assertIn(expected_call, mock_logger.info.call_args_list)
 
-    @patch("tap_youtube_analytics.sync.STREAMS")
-    @patch("tap_youtube_analytics.sync.singer.get_currently_syncing")
+    @patch("tap_youtube_analytics.sync.LOGGER")
     @patch("tap_youtube_analytics.sync.singer.Transformer")
-    @patch("tap_youtube_analytics.sync.LOGGER.info")
-    def test_sync_with_parent_stream(self, mock_logger_info, mock_transformer, mock_get_currently_syncing, mock_streams):
+    @patch("tap_youtube_analytics.sync.singer.get_currently_syncing")
+    @patch("tap_youtube_analytics.sync.STREAMS")
+    def test_sync_with_parent_stream(self, mock_streams, mock_get_currently_syncing, mock_transformer, mock_logger):
         """Test sync with a parent stream"""
         mock_stream_instance = MagicMock()
         mock_stream_instance.is_selected.return_value = True
@@ -72,7 +73,7 @@ class TestSync(unittest.TestCase):
         sync(self.mock_client, self.mock_config, self.mock_catalog, self.mock_state)
 
         # Check for any log calls that contain both streams
-        info_calls = [str(call) for call in mock_logger_info.call_args_list]
+        info_calls = [str(call) for call in mock_logger.info.call_args_list]
         
         # Look for evidence that both child and parent streams were processed
         child_stream_logged = any("child_stream" in call_str for call_str in info_calls)
