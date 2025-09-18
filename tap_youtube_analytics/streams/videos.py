@@ -108,5 +108,5 @@ class Videos(IncrementalStream):
                                 child.sync(state=state, transformer=transformer, parent_obj=record)
 
 
-            state = self.write_bookmark(state, self.tap_stream_id, value=current_max_bookmark_date)
-            return counter.value
+        state = self.write_bookmark(state, self.tap_stream_id, value=current_max_bookmark_date)
+        return counter.value
