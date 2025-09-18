@@ -7,8 +7,8 @@ class ChannelBasicStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "channel_basic_a3"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status", 
@@ -32,8 +32,8 @@ class ChannelProvinceStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "channel_province_a3"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status", 
@@ -55,8 +55,8 @@ class ChannelPlaybackLocationStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "channel_playback_location_a3"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status", 
@@ -73,8 +73,8 @@ class ChannelTrafficSourceStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "channel_traffic_source_a3"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status", 
@@ -90,8 +90,8 @@ class ChannelDeviceOSStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "channel_device_os_a3"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status",
@@ -107,8 +107,8 @@ class ChannelDemographicsStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "channel_demographics_a1"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status",
@@ -123,8 +123,8 @@ class ChannelSharingServiceStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "channel_sharing_service_a2"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status",
@@ -137,8 +137,8 @@ class ChannelAnnotationsStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "channel_annotations_a2"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status",
@@ -155,8 +155,8 @@ class ChannelCardsStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "channel_cards_a2"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status",
@@ -172,8 +172,8 @@ class ChannelEndScreensStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "channel_end_screens_a2"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status",
@@ -188,8 +188,8 @@ class ChannelSubtitlesStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "channel_subtitles_a3"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status",
@@ -205,8 +205,8 @@ class ChannelCombinedStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "channel_combined_a3"
     dimensions = [
         "date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status",
@@ -222,8 +222,8 @@ class PlaylistBasicStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "playlist_basic_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand",
@@ -239,8 +239,8 @@ class PlaylistProvinceStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "playlist_province_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand",
@@ -256,8 +256,8 @@ class PlaylistPlaybackLocationStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "playlist_playback_location_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand",
@@ -273,8 +273,8 @@ class PlaylistTrafficSourceStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "playlist_traffic_source_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand",
@@ -290,8 +290,8 @@ class PlaylistDeviceOSStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "playlist_device_os_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand",
@@ -307,8 +307,8 @@ class PlaylistCombinedStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "playlist_combined_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand",
@@ -325,8 +325,8 @@ class ContentOwnerBasicStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_basic_a4"
     dimensions = [
         "date", "channel_id", "video_id", "claimed_status", "uploader_type", 
@@ -347,8 +347,8 @@ class ContentOwnerProvinceStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_province_a3"
     dimensions = [
         "date", "channel_id", "video_id", "claimed_status", "uploader_type", "live_or_on_demand", "subscribed_status", 
@@ -367,8 +367,8 @@ class ContentOwnerPlaybackLocationStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_playback_location_a3"
     dimensions = [
         "date", "channel_id", "video_id", "claimed_status", "uploader_type", "live_or_on_demand", 
@@ -384,8 +384,8 @@ class ContentOwnerTrafficSourceStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_traffic_source_a3"
     dimensions = [
         "date", "channel_id", "video_id", "claimed_status", "uploader_type", "live_or_on_demand", 
@@ -401,8 +401,8 @@ class ContentOwnerDeviceOSStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_device_os_a3"
     dimensions = [
         "date", "channel_id", "video_id", "claimed_status", "uploader_type", "live_or_on_demand", 
@@ -418,8 +418,8 @@ class ContentOwnerDemographicsStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_demographics_a1"
     dimensions = [
         "date", "channel_id", "video_id", "claimed_status", "uploader_type", "live_or_on_demand", 
@@ -432,8 +432,8 @@ class ContentOwnerSharingServiceStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_sharing_service_a1"
     dimensions = [
         "date", "channel_id", "video_id", "claimed_status", "uploader_type", "live_or_on_demand", 
@@ -446,8 +446,8 @@ class ContentOwnerAnnotationsStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_annotations_a1"
     dimensions = [
         "date", "channel_id", "video_id", "claimed_status", "uploader_type", "live_or_on_demand", 
@@ -464,8 +464,8 @@ class ContentOwnerCardsStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_cards_a1"
     dimensions = [
         "date", "channel_id", "video_id", "claimed_status", "uploader_type", "live_or_on_demand", 
@@ -481,8 +481,8 @@ class ContentOwnerEndScreensStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_end_screens_a1"
     dimensions = [
         "date", "channel_id", "video_id", "claimed_status", "uploader_type", "live_or_on_demand", 
@@ -497,8 +497,8 @@ class ContentOwnerSubtitlesStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_subtitles_a3"
     dimensions = [
         "date", "channel_id", "video_id", "claimed_status", "uploader_type", "live_or_on_demand", 
@@ -514,8 +514,8 @@ class ContentOwnerCombinedStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_combined_a3"
     dimensions = [
         "date", "channel_id", "video_id", "claimed_status", "uploader_type", "live_or_on_demand", 
@@ -532,8 +532,8 @@ class ContentOwnerPlaylistBasicStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_playlist_basic_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand", 
@@ -549,8 +549,8 @@ class ContentOwnerPlaylistProvinceStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_playlist_province_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand", 
@@ -566,8 +566,8 @@ class ContentOwnerPlaylistPlaybackLocationStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_playlist_playback_location_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand", 
@@ -584,8 +584,8 @@ class ContentOwnerPlaylistTrafficSourceStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_playlist_traffic_source_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand", 
@@ -601,8 +601,8 @@ class ContentOwnerPlaylistDeviceOSStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_playlist_device_os_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand", 
@@ -618,8 +618,8 @@ class ContentOwnerPlaylistCombinedStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_playlist_combined_a2"
     dimensions = [
         "date", "channel_id", "playlist_id", "video_id", "live_or_on_demand", 
@@ -636,8 +636,8 @@ class ContentOwnerAdRatesStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_ad_rates_a1"
     dimensions = [
         "date", "channel_id", "video_id", "claimed_status", "uploader_type", 
@@ -652,8 +652,8 @@ class ContentOwnerEstimatedRevenueStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_estimated_revenue_a2"
     dimensions = [
         "date", "channel_id", "video_id", "claimed_status", "uploader_type", 
@@ -672,8 +672,8 @@ class ContentOwnerAssetEstimatedRevenueStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_asset_estimated_revenue_a2"
     dimensions = [
         "date", "channel_id", "video_id", "asset_id", "claimed_status", 
@@ -690,8 +690,8 @@ class ContentOwnerAssetBasicStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_asset_basic_a3"
     dimensions = [
         "date", "channel_id", "video_id", "asset_id", "claimed_status", 
@@ -713,8 +713,8 @@ class ContentOwnerAssetProvinceStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_asset_province_a3"
     dimensions = [
         "date", "channel_id", "video_id", "asset_id", "claimed_status", "uploader_type", 
@@ -734,8 +734,8 @@ class ContentOwnerAssetPlaybackLocationStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_asset_playback_location_a3"
     dimensions = [
         "date", "channel_id", "video_id", "asset_id", "claimed_status", "uploader_type", 
@@ -752,8 +752,8 @@ class ContentOwnerAssetTrafficSourceStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_asset_traffic_source_a3"
     dimensions = [
         "date", "channel_id", "video_id", "asset_id", "claimed_status", "uploader_type", 
@@ -770,8 +770,8 @@ class ContentOwnerAssetDeviceOSStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_asset_device_os_a3"
     dimensions = [
         "date", "channel_id", "video_id", "asset_id", "claimed_status", "uploader_type", 
@@ -787,8 +787,8 @@ class ContentOwnerAssetDemographicsStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_asset_demographics_a1"
     dimensions = [
         "date", "channel_id", "video_id", "asset_id", "claimed_status", "uploader_type", 
@@ -801,8 +801,8 @@ class ContentOwnerAssetSharingServiceStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_asset_sharing_service_a1"
     dimensions = [
         "date", "channel_id", "video_id", "asset_id", "claimed_status", "uploader_type", 
@@ -815,8 +815,8 @@ class ContentOwnerAssetAnnotationsStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_asset_annotations_a1"
     dimensions = [
         "date", "channel_id", "video_id", "asset_id", "claimed_status", "uploader_type", 
@@ -833,8 +833,8 @@ class ContentOwnerAssetCardsStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_asset_cards_a1"
     dimensions = [
         "date", "channel_id", "video_id", "asset_id", "claimed_status", "uploader_type", 
@@ -850,8 +850,8 @@ class ContentOwnerAssetEndScreensStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_asset_end_screens_a1"
     dimensions = [
         "date", "channel_id", "video_id", "asset_id", "claimed_status", "uploader_type", 
@@ -867,8 +867,8 @@ class ContentOwnerAssetCombinedStream(ReportStream):
     key_properties = ["dimensions_hash_key", "date"]
     replication_method = "INCREMENTAL"
     replication_keys = ["create_time"]
-    path = "jobs"
-    endpoint = "jobs"
+    path = "reports"
+    endpoint = "reports"
     report_type = "content_owner_asset_combined_a3"
     dimensions = [
         "date", "channel_id", "video_id", "asset_id", "claimed_status", "uploader_type", 

@@ -29,11 +29,11 @@ class YoutubeAnalyticsNotFoundError(YoutubeAnalyticsError):
     pass
 
 class YoutubeAnalyticsConflictError(YoutubeAnalyticsError):
-    """Class representing 406 status code."""
+    """Class representing 409 status code."""
     pass
 
 class YoutubeAnalyticsUnprocessableEntityError(YoutubeAnalyticsBackoffError):
-    """Class representing 409 status code."""
+    """Class representing 422 status code."""
     pass
 
 class YoutubeAnalyticsRateLimitError(YoutubeAnalyticsBackoffError):

@@ -102,7 +102,6 @@ class BaseStream(ABC):
 
     def get_records(self, isreport=False) -> List:
         """Interacts with api client interaction and pagination."""
-        # self.params["maxResults"] = self.pamax_results
         total_count = 0
         page = 1
         is_next_page = True
@@ -114,19 +113,16 @@ class BaseStream(ABC):
             if page > 1:
                 self.params["pageToken"] = page_token
 
-            # Squash params to query-string params for URL
-            querystring = None
-            if self.params.items():
-                querystring = "&".join(["%s=%s" % (key, value) for (key, value) in self.params.items()])
-            
             if isreport:
                 url = self.client.reporting_url
+                # YouTube Analytics API doesn't use data_key, data is in 'rows'
+                data_key = "rows"
             else:
-                url=self.client.base_url
+                url = self.client.base_url
+                data_key = self.data_key
 
             response = {}
             response = self.client.get(
-                # self.client.base_url, self.path, self.params, self.endpoint   # self.headers 3rd argument is not used
                 url=url,
                 path=self.path,
                 params=self.params,
@@ -136,14 +132,31 @@ class BaseStream(ABC):
                 LOGGER.info("Data not found for endpoint: %s", self.url_endpoint)
                 break
 
-            total_results = response.get("pageInfo", {}).get("totalResults")
-            results = response.get(self.data_key, [])
+            if isreport:
+                # YouTube Analytics API response structure
+                results = response.get("rows", [])
+                # Convert rows to dict format using columnHeaders
+                column_headers = response.get("columnHeaders", [])
+                if column_headers and results:
+                    # Convert each row array to dict using column headers
+                    converted_results = []
+                    for row in results:
+                        if len(row) == len(column_headers):
+                            record = {}
+                            for i, header in enumerate(column_headers):
+                                record[header.get('name', f'col_{i}')] = row[i]
+                            converted_results.append(record)
+                    results = converted_results
+            else:
+                total_results = response.get("pageInfo", {}).get("totalResults")
+                results = response.get(data_key, [])
+
             results_count = len(results)
             from_count = total_count + 1
             total_count = total_count + results_count
             to_count = total_count
 
-            LOGGER.info(f"Endpoint: {self.url_endpoint}, Page: {page}, Results: {from_count}-{to_count} of Total: {total_results}")
+            LOGGER.info(f"Endpoint: {self.url_endpoint}, Page: {page}, Results: {from_count}-{to_count} of Total: {total_results if not isreport else len(results)}")
 
             if not results or results is None or results == []:
                 consecutive_empty_pages += 1
@@ -153,15 +166,19 @@ class BaseStream(ABC):
             else:
                 consecutive_empty_pages = 0  # Reset counter when we get data
 
-            for result in response.get(self.data_key, []):
+            for result in results:
                 if result is None:
                     continue
                 yield result
 
-            # Pagination: increment the offset by the limit (batch-size)
-            page_token = response.get("nextPageToken")
-            if page_token is None:
+            # YouTube Analytics API doesn't support pagination like YouTube Data API
+            if isreport:
                 is_next_page = False
+            else:
+                # Pagination: increment the offset by the limit (batch-size)
+                page_token = response.get("nextPageToken")
+                if page_token is None:
+                    is_next_page = False
             page += 1
 
     def write_schema(self) -> None:
@@ -388,6 +405,161 @@ class FullTableStream(BaseStream):
 class ReportStream(IncrementalStream):
     def get_url_endpoint(self, parent_obj: Dict = None) -> str:
         return self.client.reporting_url
+
+    def update_params(self, **kwargs) -> None:
+        """Update params for YouTube Reporting API requests"""
+        super().update_params(**kwargs)
+        
+        # YouTube Reporting API workflow:
+        # 1. Create/list reporting jobs
+        # 2. Get reports from jobs
+        
+        # Add required parameters for job creation
+        if hasattr(self, 'report_type'):
+            self.params['reportTypeId'] = self.report_type
+            
+        # Add date range parameters if needed for job filtering
+        start_date = kwargs.get('updated_since', self.client.config.get('start_date', '2023-01-01'))
+        if start_date:
+            # Convert to YYYY-MM-DD format if needed
+            if 'T' in start_date:
+                start_date = start_date.split('T')[0]
+            self.params['startTime'] = f"{start_date}T00:00:00Z"
+            
+        # Set end date to today if not specified
+        from datetime import datetime
+        end_date = datetime.now().strftime('%Y-%m-%d')
+        self.params['endTime'] = f"{end_date}T23:59:59Z"
+
+    def get_records(self, isreport=False) -> List:
+        """Get records from YouTube Reporting API jobs workflow"""
+        if not isreport:
+            # Use parent implementation for non-report streams
+            return super().get_records(isreport)
+            
+        # YouTube Reporting API workflow
+        # Step 1: List existing jobs for this report type
+        jobs_url = f"{self.client.reporting_url}/jobs"
+        jobs_params = {}
+        if hasattr(self, 'report_type'):
+            jobs_params['includeSystemManaged'] = 'true'
+            
+        try:
+            jobs_response = self.client.get(
+                url=jobs_url,
+                params=jobs_params,
+                endpoint=f"{self.client.reporting_url}/jobs"
+            )
+            
+            if not jobs_response:
+                LOGGER.info(f"No jobs found for report type: {getattr(self, 'report_type', 'unknown')}")
+                return
+                
+            jobs = jobs_response.get('jobs', [])
+            
+            # Find job matching our report type
+            target_job = None
+            for job in jobs:
+                if job.get('reportTypeId') == getattr(self, 'report_type', None):
+                    target_job = job
+                    break
+                    
+            if not target_job:
+                LOGGER.info(f"No job found for report type: {getattr(self, 'report_type', 'unknown')}")
+                return
+                
+            job_id = target_job.get('id')
+            if not job_id:
+                LOGGER.error("Job found but no job ID available")
+                return
+                
+            # Step 2: Get reports for this job
+            reports_url = f"{self.client.reporting_url}/jobs/{job_id}/reports"
+            reports_params = {}
+            
+            # Add date filtering if available
+            if 'startTime' in self.params:
+                reports_params['startTimeAtOrAfter'] = self.params['startTime']
+            if 'endTime' in self.params:
+                reports_params['startTimeBefore'] = self.params['endTime']
+                
+            reports_response = self.client.get(
+                url=reports_url,
+                params=reports_params,
+                endpoint=f"{self.client.reporting_url}/jobs/{job_id}/reports"
+            )
+            
+            if not reports_response:
+                LOGGER.info(f"No reports found for job: {job_id}")
+                return
+                
+            reports = reports_response.get('reports', [])
+            LOGGER.info(f"Found {len(reports)} reports for job {job_id}")
+            
+            for report in reports:
+                download_url = report.get('downloadUrl')
+                if not download_url:
+                    LOGGER.warning(f"Report {report.get('id')} has no download URL")
+                    continue
+                    
+                LOGGER.info(f"Downloading report {report.get('id')} from {download_url}")
+                
+                # Step 3: Download and parse the report data
+                try:
+                    # Download the CSV report using raw method
+                    csv_data = self.client.get_raw(url=download_url, endpoint=download_url)
+                    
+                    if csv_data and csv_data.strip():
+                        LOGGER.info(f"Downloaded {len(csv_data)} characters for report {report.get('id')}")
+                        
+                        # Check if it's actually CSV data
+                        if csv_data.startswith('date,') or csv_data.startswith('"date"'):
+                            # Parse CSV data properly
+                            import csv
+                            import io
+                            
+                            try:
+                                # Use proper CSV parser
+                                csv_reader = csv.reader(io.StringIO(csv_data))
+                                headers = next(csv_reader)  # Get header row
+                                LOGGER.info(f"CSV headers: {headers}")
+                                
+                                row_count = 0
+                                for row in csv_reader:
+                                    if len(row) == len(headers):
+                                        record = {}
+                                        for i, header in enumerate(headers):
+                                            record[header.strip()] = row[i].strip() if row[i] else None
+                                        
+                                        # Add report metadata
+                                        record['report_id'] = report.get('id')
+                                        record['report_start_time'] = report.get('startTime')
+                                        record['report_end_time'] = report.get('endTime')
+                                        
+                                        row_count += 1
+                                        yield record
+                                
+                                LOGGER.info(f"Processed {row_count} rows from report {report.get('id')}")
+                                
+                            except Exception as csv_error:
+                                LOGGER.error(f"CSV parsing error for report {report.get('id')}: {csv_error}")
+                                # Log first 200 characters of data for debugging
+                                LOGGER.error(f"Data preview: {csv_data[:200]}")
+                                continue
+                        else:
+                            LOGGER.warning(f"Report {report.get('id')} doesn't appear to be CSV format")
+                            LOGGER.warning(f"Data preview: {csv_data[:200]}")
+                            continue
+                    else:
+                        LOGGER.info(f"Report {report.get('id')} returned empty data")
+                        
+                except Exception as e:
+                    LOGGER.error(f"Error downloading/parsing report {report.get('id')}: {e}")
+                    continue
+                    
+        except Exception as e:
+            LOGGER.error(f"Error in YouTube Reporting API workflow: {e}")
+            return
 
     def sync(
         self,

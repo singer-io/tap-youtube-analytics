@@ -108,7 +108,53 @@ class Client:
         """Calls the make_request method with a prefixed method type `POST`"""
         return self.__make_request("POST", path=path, url=url, **kwargs)
 
+    def get_raw(self, url=None, **kwargs):
+        """Get raw response without JSON parsing for CSV downloads"""
+        return self.__make_request_raw("GET", url=url, **kwargs)
 
+    @backoff.on_exception(
+        wait_gen=backoff.expo,
+        exception=(
+            ConnectionResetError,
+            ConnectionError,
+            ChunkedEncodingError,
+            Timeout,
+            YoutubeAnalyticsBackoffError
+        ),
+        max_tries=5,
+        factor=2,
+    )
+    def __make_request_raw(self, method: str, url=None, **kwargs) -> Optional[str]:
+        """Performs HTTP Operations for raw data (like CSV)"""
+        self.check_api_credentials()
+
+        if "endpoint" in kwargs:
+            endpoint = kwargs["endpoint"]
+            del kwargs["endpoint"]
+        else:
+            endpoint = None
+
+        if "headers" not in kwargs:
+            kwargs["headers"] = {}
+        kwargs["headers"]["Authorization"] = f"Bearer {self.__access_token}"
+
+        if self.config["user_agent"]:
+            kwargs["headers"]["User-Agent"] = self.config["user_agent"]
+
+        with metrics.http_request_timer(endpoint) as timer:
+            response = self._session.request(method, url, timeout=self.request_timeout, **kwargs)
+            timer.tags[metrics.Tag.http_status_code] = response.status_code
+
+        if response.status_code >= 500:
+            raise YoutubeAnalyticsBackoffError()
+
+        if response.status_code == 429:
+            raise YoutubeAnalyticsRateLimitError()
+
+        if response.status_code != 200:
+            raise_for_error(response)
+
+        return response.text
 
     @backoff.on_exception(
         wait_gen=backoff.expo,
