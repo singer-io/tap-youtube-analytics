@@ -135,6 +135,7 @@ class BaseStream(ABC):
             if isreport:
                 # YouTube Analytics API response structure
                 results = response.get("rows", [])
+                total_results = len(results)  # Set total_results for reports
                 # Convert rows to dict format using columnHeaders
                 column_headers = response.get("columnHeaders", [])
                 if column_headers and results:
@@ -148,7 +149,7 @@ class BaseStream(ABC):
                             converted_results.append(record)
                     results = converted_results
             else:
-                total_results = response.get("pageInfo", {}).get("totalResults")
+                total_results = response.get("pageInfo", {}).get("totalResults", 0)
                 results = response.get(data_key, [])
 
             results_count = len(results)
@@ -156,7 +157,7 @@ class BaseStream(ABC):
             total_count = total_count + results_count
             to_count = total_count
 
-            LOGGER.info(f"Endpoint: {self.url_endpoint}, Page: {page}, Results: {from_count}-{to_count} of Total: {total_results if not isreport else len(results)}")
+            LOGGER.info(f"Endpoint: {self.url_endpoint}, Page: {page}, Results: {from_count}-{to_count} of Total: {total_results}")
 
             if not results or results is None or results == []:
                 consecutive_empty_pages += 1
