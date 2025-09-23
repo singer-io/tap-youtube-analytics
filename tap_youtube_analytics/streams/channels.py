@@ -10,7 +10,7 @@ class Channels(FullTableStream):
     key_properties = ["id"]
     replication_method = "FULL_TABLE"
     params = {"maxResults": 1, "part": "id,contentDetails,snippet,statistics,status"}
-    data_key ="items"
+    data_key = "items"
     path = "channels"
     endpoint = "channels"
 
