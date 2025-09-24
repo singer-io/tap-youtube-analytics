@@ -16,6 +16,9 @@ from singer import (
 )
 import humps
 import hashlib
+import csv
+import io
+from datetime import datetime
 
 LOGGER = get_logger()
 
@@ -428,7 +431,6 @@ class ReportStream(IncrementalStream):
             self.params['startTime'] = f"{start_date}T00:00:00Z"
             
         # Set end date to today if not specified
-        from datetime import datetime
         end_date = datetime.now().strftime('%Y-%m-%d')
         self.params['endTime'] = f"{end_date}T23:59:59Z"
 
@@ -516,8 +518,6 @@ class ReportStream(IncrementalStream):
                         # Check if it's actually CSV data
                         if csv_data.startswith('date,') or csv_data.startswith('"date"'):
                             # Parse CSV data properly
-                            import csv
-                            import io
                             
                             try:
                                 # Use proper CSV parser
