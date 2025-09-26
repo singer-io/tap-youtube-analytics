@@ -5,10 +5,11 @@ from dateutil import parser
 from singer import metadata
 from singer.catalog import CatalogEntry, Schema
 
-from tap_youtube_analytics.streams.reports import ChannelBasicStream
-from tap_youtube_analytics.streams.playlist_items import PlaylistItems
-from tap_youtube_analytics.streams.videos import Videos
 import humps
+
+from tap_youtube_analytics.streams.playlist_items import PlaylistItems
+from tap_youtube_analytics.streams.reports import ChannelBasicStream
+from tap_youtube_analytics.streams.videos import Videos
 
 if not hasattr(humps, "decamelize"):
     humps.decamelize = lambda value: value

@@ -1,13 +1,13 @@
+import codecs
+import csv
+from datetime import datetime, timedelta, timezone
+import json
 from typing import Any, Dict, Mapping, Optional, Tuple, Iterator
 
 import backoff
-from datetime import datetime, timedelta, timezone
-import json
-import csv
-import codecs
 import requests
 from requests import session
-from requests.exceptions import Timeout, ConnectionError, ChunkedEncodingError
+from requests.exceptions import ChunkedEncodingError, ConnectionError, Timeout
 from singer import get_logger, metrics
 
 from tap_youtube_analytics.exceptions import ERROR_CODE_EXCEPTION_MAPPING, YoutubeAnalyticsError, YoutubeAnalyticsBackoffError, YoutubeAnalyticsRateLimitError
@@ -72,7 +72,6 @@ class Client:
                         max_tries=5,
                         factor=2)
     def check_api_credentials(self) -> None:
-        # This line still has a timezone issue
         if self.__access_token is not None and self.__expires > datetime.now(timezone.utc):
             return
 

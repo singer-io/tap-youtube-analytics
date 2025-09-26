@@ -1,21 +1,22 @@
+import hashlib
 import json
 import os
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Tuple, List
 from datetime import datetime, timedelta
+from typing import Any, Dict, List, Tuple
+
+import humps
 from singer import (
     Transformer,
     get_bookmark,
     get_logger,
+    metadata,
     metrics,
+    utils,
     write_bookmark,
     write_record,
     write_schema,
-    metadata,
-    utils,
 )
-import humps
-import hashlib
 
 LOGGER = get_logger()
 ATTRIBUTION_DAYS = 7
@@ -34,7 +35,6 @@ class BaseStream(ABC):
 
     url_endpoint = ""
     path = ""
-    # page_size = 50
     next_page_key = "nextPageToken"
     headers = {"Accept": "application/json"}
     params = {}
@@ -509,13 +509,14 @@ class ReportStream(IncrementalStream):
                 page_token = jobs_response.get('nextPageToken')
 
             if not target_job and hasattr(self, 'report_type'):
+                report_type = getattr(self, 'report_type', None)
                 LOGGER.info(
                     "No existing job for report type %s. Creating new job.",
-                    self.report_type,
+                    report_type,
                 )
                 create_payload = {
                     'name': self.tap_stream_id,
-                    'reportTypeId': self.report_type,
+                    'reportTypeId': report_type,
                 }
                 target_job = self.client.post(
                     url=self.client.reporting_url,

@@ -1,14 +1,7 @@
-from typing import Dict, Iterator, List
-from singer import (
-    Transformer,
-    get_bookmark,
-    get_logger,
-    metrics,
-    write_bookmark,
-    write_record,
-    write_schema,
-    metadata
-)
+from typing import Dict
+
+from singer import Transformer, get_logger, metrics, write_record
+
 from tap_youtube_analytics.streams.abstracts import FullTableStream
 
 LOGGER = get_logger()

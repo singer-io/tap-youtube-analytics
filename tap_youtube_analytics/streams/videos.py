@@ -1,12 +1,7 @@
-from typing import Dict, Any
-from singer import get_bookmark, get_logger, utils
+from typing import Any, Dict
+
+from singer import Transformer, get_logger, metrics, utils, write_bookmark, write_record
 from tap_youtube_analytics.streams.abstracts import IncrementalStream
-from singer import (
-    Transformer,
-    metrics,
-    write_bookmark,
-    write_record,
-)
 
 LOGGER = get_logger()
 

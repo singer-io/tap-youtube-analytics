@@ -1,8 +1,10 @@
-import os
 import json
-import singer
+import os
 from typing import Dict, Tuple
+
+import singer
 from singer import metadata
+
 from tap_youtube_analytics.streams import STREAMS
 
 LOGGER = singer.get_logger()
