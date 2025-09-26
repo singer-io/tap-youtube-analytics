@@ -51,13 +51,17 @@ class PlaylistItems(IncrementalStream):
                 # Loop playlists
                 for playlist in playlists:
                     playlist_id = playlist.get("id")
-                    self.params = {"maxResults": 50, "part": "id,contentDetails,snippet,status"}
+                    self.params = {
+                        "maxResults": 50,
+                        "part": "id,contentDetails,snippet,status",
+                    }
                     self.params["playlistId"] = playlist_id
                     self.path = "playlistItems"
                     self.endpoint = "playlist_items"
                     self.data_key = "items"
 
                     records = self.get_records()
+                    exhausted_playlist = False
                     for record in records:
                         for key in self.key_properties:
                             if not record.get(key):
@@ -83,6 +87,12 @@ class PlaylistItems(IncrementalStream):
 
                             for child in self.child_to_sync:
                                 child.sync(state=state, transformer=transformer, parent_obj=record)
+                        else:
+                            exhausted_playlist = True
+                            break
+
+                    if exhausted_playlist:
+                        continue
 
 
             state = self.write_bookmark(state, self.tap_stream_id, value=current_max_bookmark_date)

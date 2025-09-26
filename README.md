@@ -86,12 +86,20 @@ This tap:
     {
         "currently_syncing": "engage",
         "bookmarks": {
-            "export": "2019-09-27T22:34:39.000000Z",
-            "funnels": "2019-09-28T15:30:26.000000Z",
-            "revenue": "2019-09-28T18:23:53Z"
+            "export": {
+                "published_at": "2019-09-27T22:34:39.000000Z"
+            },
+            "funnels": {
+                "published_at": "2019-09-28T15:30:26.000000Z"
+            },
+            "revenue": {
+                "create_time": "2019-09-28T18:23:53Z"
+            }
         }
     }
     ```
+
+    The tap now stores bookmarks in this nested structure. If an existing state file still contains the older flat timestamps (for example `"export": "2019-09-27T22:34:39.000000Z"`), the tap will automatically migrate that value on the next run, but we recommend updating persisted state files and documentation to the new shape.
 
 4. Run the Tap in Discovery Mode
     This creates a catalog.json for selecting objects/fields to integrate:

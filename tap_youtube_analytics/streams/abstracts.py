@@ -2,8 +2,7 @@ import json
 import os
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Tuple, List
-from datetime import datetime
-from dateutil import parser
+from datetime import datetime, timedelta
 from singer import (
     Transformer,
     get_bookmark,
@@ -12,15 +11,15 @@ from singer import (
     write_bookmark,
     write_record,
     write_schema,
-    metadata
+    metadata,
+    utils,
 )
 import humps
 import hashlib
-import csv
-import io
-from datetime import datetime
 
 LOGGER = get_logger()
+ATTRIBUTION_DAYS = 7
+DEFAULT_REPORT_PAGE_SIZE = 50
 
 
 class BaseStream(ABC):
@@ -318,10 +317,12 @@ class IncrementalStream(BaseStream):
     def get_bookmark(self, state: dict, stream: str, key: Any = None) -> int:
         """A wrapper for singer.get_bookmark to deal with compatibility for
         bookmark values or start values."""
+        bookmark_key = key or (self.replication_keys[0] if self.replication_keys else None)
+        self._migrate_legacy_bookmark(state, stream, bookmark_key)
         return get_bookmark(
             state,
             stream,
-            key or self.replication_keys[0],
+            bookmark_key,
             self.client.config["start_date"],
         )
 
@@ -331,11 +332,28 @@ class IncrementalStream(BaseStream):
         if not (key or self.replication_keys):
             return state
 
-        current_bookmark = get_bookmark(state, stream, key or self.replication_keys[0], self.client.config["start_date"])
+        bookmark_key = key or self.replication_keys[0]
+        self._migrate_legacy_bookmark(state, stream, bookmark_key)
+        current_bookmark = get_bookmark(state, stream, bookmark_key, self.client.config["start_date"])
         value = max(current_bookmark, value)
         return write_bookmark(
-            state, stream, key or self.replication_keys[0], value
+            state, stream, bookmark_key, value
         )
+
+    def _migrate_legacy_bookmark(self, state: dict, stream: str, key: Any) -> None:
+        """Upgrade legacy flat bookmarks to the nested structure expected by Singer."""
+        if not state or not isinstance(state, dict):
+            return
+
+        bookmarks = state.get("bookmarks")
+        if not isinstance(bookmarks, dict) or stream not in bookmarks:
+            return
+
+        current = bookmarks.get(stream)
+        if isinstance(current, str) and key:
+            bookmarks[stream] = {key: current}
+        elif current is None:
+            bookmarks[stream] = {}
 
 
     def sync(
@@ -410,29 +428,39 @@ class ReportStream(IncrementalStream):
     def get_url_endpoint(self, parent_obj: Dict = None) -> str:
         return self.client.reporting_url
 
+    @staticmethod
+    def _normalize_datetime(value: str) -> str:
+        """Ensure datetime strings include a time component and timezone."""
+        if not value:
+            return value
+        if len(value) == 10 and "T" not in value:
+            value = f"{value}T00:00:00Z"
+        if "T" in value and not value.endswith("Z") and "+" not in value:
+            value = f"{value}Z"
+        return value
+
     def update_params(self, **kwargs) -> None:
         """Update params for YouTube Reporting API requests"""
         super().update_params(**kwargs)
-        
-        # YouTube Reporting API workflow:
-        # 1. Create/list reporting jobs
-        # 2. Get reports from jobs
-        
-        # Add required parameters for job creation
-        if hasattr(self, 'report_type'):
-            self.params['reportTypeId'] = self.report_type
-            
-        # Add date range parameters if needed for job filtering
-        start_date = kwargs.get('updated_since', self.client.config.get('start_date', '2023-01-01'))
-        if start_date:
-            # Convert to YYYY-MM-DD format if needed
-            if 'T' in start_date:
-                start_date = start_date.split('T')[0]
-            self.params['startTime'] = f"{start_date}T00:00:00Z"
-            
-        # Set end date to today if not specified
-        end_date = datetime.now().strftime('%Y-%m-%d')
-        self.params['endTime'] = f"{end_date}T23:59:59Z"
+
+        params: Dict[str, Any] = {"pageSize": DEFAULT_REPORT_PAGE_SIZE}
+
+        if hasattr(self, "report_type"):
+            params["reportTypeId"] = self.report_type
+
+        updated_since = kwargs.get("updated_since")
+        if updated_since:
+            params["createdAfter"] = self._normalize_datetime(updated_since)
+
+        config_start = self.client.config.get("start_date")
+        if config_start:
+            params["startTimeAtOrAfter"] = self._normalize_datetime(config_start)
+
+        end_time = kwargs.get("end_time")
+        if end_time:
+            params["startTimeBefore"] = self._normalize_datetime(end_time)
+
+        self.params.update({k: v for k, v in params.items() if v})
 
     def get_records(self, isreport=False) -> List:
         """Get records from YouTube Reporting API jobs workflow"""
@@ -443,34 +471,65 @@ class ReportStream(IncrementalStream):
         # YouTube Reporting API workflow
         # Step 1: List existing jobs for this report type
         jobs_url = f"{self.client.reporting_url}/jobs"
-        jobs_params = {}
-        if hasattr(self, 'report_type'):
-            jobs_params['includeSystemManaged'] = 'true'
-            
+        jobs_params = {
+            "includeSystemManaged": "true",
+            "pageSize": DEFAULT_REPORT_PAGE_SIZE,
+        }
+
         try:
-            jobs_response = self.client.get(
-                url=jobs_url,
-                params=jobs_params,
-                endpoint=f"{self.client.reporting_url}/jobs"
-            )
-            
-            if not jobs_response:
-                LOGGER.info(f"No jobs found for report type: {getattr(self, 'report_type', 'unknown')}")
-                return
-                
-            jobs = jobs_response.get('jobs', [])
-            
-            # Find job matching our report type
             target_job = None
-            for job in jobs:
-                if job.get('reportTypeId') == getattr(self, 'report_type', None):
-                    target_job = job
+            page_token = None
+            while True:
+                if page_token:
+                    jobs_params['pageToken'] = page_token
+
+                jobs_response = self.client.get(
+                    url=jobs_url,
+                    params=jobs_params,
+                    endpoint=f"{self.client.reporting_url}/jobs"
+                )
+
+                if not jobs_response:
+                    LOGGER.info(
+                        "No jobs found for report type: %s",
+                        getattr(self, 'report_type', 'unknown')
+                    )
                     break
-                    
+
+                jobs = jobs_response.get('jobs', [])
+
+                for job in jobs:
+                    if job.get('reportTypeId') == getattr(self, 'report_type', None):
+                        target_job = job
+                        break
+
+                if target_job or 'nextPageToken' not in jobs_response:
+                    break
+
+                page_token = jobs_response.get('nextPageToken')
+
+            if not target_job and hasattr(self, 'report_type'):
+                LOGGER.info(
+                    "No existing job for report type %s. Creating new job.",
+                    self.report_type,
+                )
+                create_payload = {
+                    'name': self.tap_stream_id,
+                    'reportTypeId': self.report_type,
+                }
+                target_job = self.client.post(
+                    url=self.client.reporting_url,
+                    path='jobs',
+                    data=create_payload,
+                    endpoint='job_create'
+                ) or {}
+
             if not target_job:
-                LOGGER.info(f"No job found for report type: {getattr(self, 'report_type', 'unknown')}")
+                LOGGER.info(
+                    "Unable to find or create reporting job for stream %s", self.tap_stream_id
+                )
                 return
-                
+
             job_id = target_job.get('id')
             if not job_id:
                 LOGGER.error("Job found but no job ID available")
@@ -478,86 +537,59 @@ class ReportStream(IncrementalStream):
                 
             # Step 2: Get reports for this job
             reports_url = f"{self.client.reporting_url}/jobs/{job_id}/reports"
-            reports_params = {}
-            
-            # Add date filtering if available
-            if 'startTime' in self.params:
-                reports_params['startTimeAtOrAfter'] = self.params['startTime']
-            if 'endTime' in self.params:
-                reports_params['startTimeBefore'] = self.params['endTime']
-                
-            reports_response = self.client.get(
-                url=reports_url,
-                params=reports_params,
-                endpoint=f"{self.client.reporting_url}/jobs/{job_id}/reports"
-            )
-            
-            if not reports_response:
-                LOGGER.info(f"No reports found for job: {job_id}")
-                return
-                
-            reports = reports_response.get('reports', [])
-            LOGGER.info(f"Found {len(reports)} reports for job {job_id}")
-            
-            for report in reports:
-                download_url = report.get('downloadUrl')
-                if not download_url:
-                    LOGGER.warning(f"Report {report.get('id')} has no download URL")
-                    continue
-                    
-                LOGGER.info(f"Downloading report {report.get('id')} from {download_url}")
-                
-                # Step 3: Download and parse the report data
-                try:
-                    # Download the CSV report using raw method
-                    csv_data = self.client.get_raw(url=download_url, endpoint=download_url)
-                    
-                    if csv_data and csv_data.strip():
-                        LOGGER.info(f"Downloaded {len(csv_data)} characters for report {report.get('id')}")
-                        
-                        # Check if it's actually CSV data
-                        if csv_data.startswith('date,') or csv_data.startswith('"date"'):
-                            # Parse CSV data properly
-                            
-                            try:
-                                # Use proper CSV parser
-                                csv_reader = csv.reader(io.StringIO(csv_data))
-                                headers = next(csv_reader)  # Get header row
-                                LOGGER.info(f"CSV headers: {headers}")
-                                
-                                row_count = 0
-                                for row in csv_reader:
-                                    if len(row) == len(headers):
-                                        record = {}
-                                        for i, header in enumerate(headers):
-                                            record[header.strip()] = row[i].strip() if row[i] else None
-                                        
-                                        # Add report metadata
-                                        record['report_id'] = report.get('id')
-                                        record['report_start_time'] = report.get('startTime')
-                                        record['report_end_time'] = report.get('endTime')
-                                        
-                                        row_count += 1
-                                        yield record
-                                
-                                LOGGER.info(f"Processed {row_count} rows from report {report.get('id')}")
-                                
-                            except Exception as csv_error:
-                                LOGGER.error(f"CSV parsing error for report {report.get('id')}: {csv_error}")
-                                # Log first 200 characters of data for debugging
-                                LOGGER.error(f"Data preview: {csv_data[:200]}")
-                                continue
+            reports_params = {"pageSize": DEFAULT_REPORT_PAGE_SIZE}
+
+            if 'createdAfter' in self.params:
+                reports_params['createdAfter'] = self.params['createdAfter']
+            if 'startTimeAtOrAfter' in self.params:
+                reports_params['startTimeAtOrAfter'] = self.params['startTimeAtOrAfter']
+            if 'startTimeBefore' in self.params:
+                reports_params['startTimeBefore'] = self.params['startTimeBefore']
+
+            page_token = None
+            while True:
+                if page_token:
+                    reports_params['pageToken'] = page_token
+
+                reports_response = self.client.get(
+                    url=reports_url,
+                    params=reports_params,
+                    endpoint=f"{self.client.reporting_url}/jobs/{job_id}/reports"
+                )
+
+                if not reports_response:
+                    LOGGER.info(f"No reports found for job: {job_id}")
+                    break
+
+                reports = reports_response.get('reports', [])
+                LOGGER.info(f"Found {len(reports)} reports for job {job_id}")
+
+                for report in reports:
+                    download_url = report.get('downloadUrl')
+                    if not download_url:
+                        LOGGER.warning(f"Report {report.get('id')} has no download URL")
+                        continue
+
+                    LOGGER.info(f"Downloading report {report.get('id')} from {download_url}")
+
+                    try:
+                        row_count = 0
+                        for record in self.client.get_report(url=download_url, endpoint=download_url):
+                            row_count += 1
+                            yield (record, report)
+
+                        if row_count == 0:
+                            LOGGER.info(f"Report {report.get('id')} returned empty data")
                         else:
-                            LOGGER.warning(f"Report {report.get('id')} doesn't appear to be CSV format")
-                            LOGGER.warning(f"Data preview: {csv_data[:200]}")
-                            continue
-                    else:
-                        LOGGER.info(f"Report {report.get('id')} returned empty data")
-                        
-                except Exception as e:
-                    LOGGER.error(f"Error downloading/parsing report {report.get('id')}: {e}")
-                    continue
-                    
+                            LOGGER.info(f"Processed {row_count} rows from report {report.get('id')}")
+
+                    except Exception as e:
+                        LOGGER.error(f"Error downloading/parsing report {report.get('id')}: {e}")
+                        continue
+                page_token = reports_response.get('nextPageToken')
+                if not page_token:
+                    break
+
         except Exception as e:
             LOGGER.error(f"Error in YouTube Reporting API workflow: {e}")
             return
@@ -568,8 +600,32 @@ class ReportStream(IncrementalStream):
         transformer: Transformer,
         parent_obj: Dict = None,
     ) -> Dict:
+        bookmark_value = self._normalize_datetime(self.get_bookmark(state, self.tap_stream_id))
+
+        try:
+            bookmark_dttm = utils.strptime_to_utc(bookmark_value)
+        except Exception as err:  # pragma: no cover - defensive
+            LOGGER.warning(
+                "Failed to parse bookmark %s for stream %s: %s",
+                bookmark_value,
+                self.tap_stream_id,
+                err,
+            )
+            bookmark_dttm = utils.now() - timedelta(days=ATTRIBUTION_DAYS)
+
+        attribution_cutoff = utils.now() - timedelta(days=ATTRIBUTION_DAYS)
+        if attribution_cutoff < bookmark_dttm:
+            effective_start_dttm = attribution_cutoff
+            effective_start = utils.strftime(effective_start_dttm)
+        else:
+            effective_start_dttm = bookmark_dttm
+            effective_start = bookmark_value
+
+        current_max_dttm = bookmark_dttm
+
         self.url_endpoint = self.get_url_endpoint(parent_obj)
-        self.update_params()
+        self.update_params(updated_since=effective_start)
+
         with metrics.record_counter(self.tap_stream_id) as counter:
             for item in self.get_records(isreport=True):
                 if not item:
@@ -589,6 +645,26 @@ class ReportStream(IncrementalStream):
                     self.metadata
                 )
 
+                record_time_raw = transformed_record.get(self.replication_keys[0])
+                record_dttm = None
+                if record_time_raw:
+                    try:
+                        normalized_time = self._normalize_datetime(record_time_raw)
+                        record_dttm = utils.strptime_to_utc(normalized_time)
+                    except Exception as err:
+                        LOGGER.warning(
+                            "Failed to parse record timestamp %s for stream %s: %s",
+                            record_time_raw,
+                            self.tap_stream_id,
+                            err,
+                        )
+
+                if record_dttm and record_dttm < effective_start_dttm:
+                    continue
+
+                if record_dttm and record_dttm > current_max_dttm:
+                    current_max_dttm = record_dttm
+
                 if self.is_selected():
                     write_record(self.tap_stream_id, transformed_record)
                     counter.increment()
@@ -596,4 +672,9 @@ class ReportStream(IncrementalStream):
                 for child in self.child_to_sync:
                     child.sync(state=state, transformer=transformer, parent_obj=record)
 
+            state = self.write_bookmark(
+                state,
+                self.tap_stream_id,
+                value=utils.strftime(current_max_dttm),
+            )
             return counter.value

@@ -40,6 +40,8 @@ class Videos(IncrementalStream):
         channel_ids = self.client.config["channel_ids"]
         channel_list = [cid.strip() for cid in channel_ids.split(",")]
 
+        total_written = 0
+
         with metrics.record_counter(self.tap_stream_id) as counter:
             for channel_id in channel_list:
                 search_params = {
@@ -47,7 +49,8 @@ class Videos(IncrementalStream):
                     "channelId": channel_id,
                     "order": "date",
                     "type": "video",
-                    "maxResults": 50
+                    "maxResults": 50,
+                    "publishedAfter": bookmark_date,
                 }
 
                 self.path = "search"
@@ -63,12 +66,27 @@ class Videos(IncrementalStream):
                     if not video_id:
                         continue
 
+                    published_at = search_record.get("snippet", {}).get("publishedAt")
+                    if not published_at:
+                        continue
+
+                    try:
+                        search_record_dttm = utils.strptime_to_utc(published_at)
+                    except Exception:
+                        continue
+                    if search_record_dttm < last_dttm:
+                        break
+
                     video_ids.append(video_id)
+                    current_max_bookmark_date = max(
+                        current_max_bookmark_date, published_at
+                    )
 
                 # Move video details fetching outside the loop
                 unique_video_ids = list(set(video_ids))
                 video_id_chunks = self.chunks(unique_video_ids, 50)
 
+                stop_fetching = False
                 for video_id_chunk in video_id_chunks:
                     videos_params = {
                         "part": "id,snippet",
@@ -99,6 +117,7 @@ class Videos(IncrementalStream):
                             if self.is_selected():
                                 write_record(self.tap_stream_id, transformed_record)
                                 counter.increment()
+                                total_written += 1
 
                             current_max_bookmark_date = max(
                                 current_max_bookmark_date, record_timestamp
@@ -106,7 +125,16 @@ class Videos(IncrementalStream):
 
                             for child in self.child_to_sync:
                                 child.sync(state=state, transformer=transformer, parent_obj=record)
+                        else:
+                            stop_fetching = True
+                            break
+
+                    if stop_fetching:
+                        break
+
+                if stop_fetching:
+                    break
 
 
         state = self.write_bookmark(state, self.tap_stream_id, value=current_max_bookmark_date)
-        return counter.value
+        return total_written

@@ -9,7 +9,7 @@ class Channels(FullTableStream):
     tap_stream_id = "channels"
     key_properties = ["id"]
     replication_method = "FULL_TABLE"
-    params = {"maxResults": 1, "part": "id,contentDetails,snippet,statistics,status"}
+    params = {"maxResults": 50, "part": "id,contentDetails,snippet,statistics,status"}
     data_key = "items"
     path = "channels"
     endpoint = "channels"

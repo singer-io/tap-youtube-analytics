@@ -1,8 +1,10 @@
-from typing import Any, Dict, Mapping, Optional, Tuple
+from typing import Any, Dict, Mapping, Optional, Tuple, Iterator
 
 import backoff
 from datetime import datetime, timedelta, timezone
 import json
+import csv
+import codecs
 import requests
 from requests import session
 from requests.exceptions import Timeout, ConnectionError, ChunkedEncodingError
@@ -111,6 +113,49 @@ class Client:
     def get_raw(self, url=None, **kwargs):
         """Get raw response without JSON parsing for CSV downloads"""
         return self.__make_request_raw("GET", url=url, **kwargs)
+
+    def get_report(self, url: str, **kwargs) -> Iterator[Dict[str, Any]]:
+        """Download and stream CSV report rows as dictionaries."""
+        self.check_api_credentials()
+
+        endpoint = kwargs.pop("endpoint", None)
+
+        headers = kwargs.setdefault("headers", {})
+        headers["Authorization"] = f"Bearer {self.__access_token}"
+        if self.config.get("user_agent"):
+            headers["User-Agent"] = self.config["user_agent"]
+
+        kwargs.setdefault("stream", True)
+
+        def _row_iterator() -> Iterator[Dict[str, Any]]:
+            with metrics.http_request_timer(endpoint) as timer:
+                with self._session.request(
+                    "GET",
+                    url,
+                    timeout=self.request_timeout,
+                    **kwargs,
+                ) as response:
+                    timer.tags[metrics.Tag.http_status_code] = response.status_code
+
+                    if response.status_code >= 500:
+                        raise YoutubeAnalyticsBackoffError()
+
+                    if response.status_code == 429:
+                        raise YoutubeAnalyticsRateLimitError()
+
+                    if response.status_code != 200:
+                        raise_for_error(response)
+
+                    reader = csv.DictReader(
+                        codecs.iterdecode(response.iter_lines(), encoding="utf-8"),
+                        delimiter=",",
+                    )
+
+                    for row in reader:
+                        if row:
+                            yield row
+
+        return _row_iterator()
 
     @backoff.on_exception(
         wait_gen=backoff.expo,
