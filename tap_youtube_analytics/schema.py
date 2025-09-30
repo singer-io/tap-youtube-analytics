@@ -72,15 +72,19 @@ def get_schemas() -> Tuple[Dict, Dict]:
 
     refs = load_schema_references()
 
-    for stream_name, stream_obj in STREAMS.items():
+    for registry_name, stream_obj in STREAMS.items():
+        tap_stream_id = getattr(stream_obj, "tap_stream_id", registry_name)
+        if not isinstance(tap_stream_id, str):
+            tap_stream_id = registry_name
+
         # Load per-stream schema or fallback to reports.json
-        raw_schema = _load_schema_for_stream(stream_name)
+        raw_schema = _load_schema_for_stream(registry_name)
 
         # Resolve $ref entries against shared refs
         schema = singer.resolve_schema_references(raw_schema, refs)
 
         # Save the resolved schema
-        schemas[stream_name] = schema
+        schemas[tap_stream_id] = schema
 
         # Build Singer metadata
         mdata = metadata.get_standard_metadata(
@@ -91,6 +95,9 @@ def get_schemas() -> Tuple[Dict, Dict]:
         )
         m_map = metadata.to_map(mdata)
 
+        # Keep track of the original registry key so sync can resolve the class
+        m_map = metadata.write(m_map, (), "lookup_name", registry_name)
+
         # Mark replication keys as automatic
         automatic_keys = getattr(stream_obj, "replication_keys", []) or []
         for field_name in schema.get("properties", {}).keys():
@@ -99,6 +106,6 @@ def get_schemas() -> Tuple[Dict, Dict]:
                     m_map, ("properties", field_name), "inclusion", "automatic"
                 )
 
-        field_metadata[stream_name] = metadata.to_list(m_map)
+        field_metadata[tap_stream_id] = metadata.to_list(m_map)
 
     return schemas, field_metadata
