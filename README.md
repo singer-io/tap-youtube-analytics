@@ -23,20 +23,20 @@ This tap:
 ## Streams
 
 
-** [channels](https://developers.google.com/youtube/v3/docs/channels/list)**
-- Primary keys: ['id']
+[channels](https://developers.google.com/youtube/v3/docs/channels/list)
+- Primary keys: ["id"]
 - Replication strategy: FULL_TABLE
 
-** [playlists](https://developers.google.com/youtube/v3/docs/playlists/list)**
-- Primary keys: ['id']
+[playlists](https://developers.google.com/youtube/v3/docs/playlists/list)
+- Primary keys: ["id"]
 - Replication strategy: FULL_TABLE
 
-** [playlist_items](https://developers.google.com/youtube/v3/docs/playlistItems/list)**
-- Primary keys: ['id']
+[playlist_items](https://developers.google.com/youtube/v3/docs/playlistItems/list)
+- Primary keys: ["id"]
 - Replication strategy: INCREMENTAL
 
-** [videos](https://developers.google.com/youtube/v3/docs/videos/list)**
-- Primary keys: ['id']
+[videos](https://developers.google.com/youtube/v3/docs/videos/list)
+- Primary keys: ["id"]
 - Replication strategy: INCREMENTAL
 
 
@@ -78,28 +78,23 @@ This tap:
         "user_agent": "tap-youtube-analytics <api_user_email@your_company.com>",
         "request_timeout": 300,
         ...
-    }```
+    }
+    ```
 
     Optionally, also create a `state.json` file. `currently_syncing` is an optional attribute used for identifying the last object to be synced in case the job is interrupted mid-stream. The next run would begin where the last job left off.
 
     ```json
     {
-        "currently_syncing": "engage",
+        "currently_syncing": "playlists",
         "bookmarks": {
-            "export": {
+            "videos": {
                 "published_at": "2019-09-27T22:34:39.000000Z"
-            },
-            "funnels": {
-                "published_at": "2019-09-28T15:30:26.000000Z"
-            },
-            "revenue": {
-                "create_time": "2019-09-28T18:23:53Z"
             }
         }
     }
     ```
 
-    The tap now stores bookmarks in this nested structure. If an existing state file still contains the older flat timestamps (for example `"export": "2019-09-27T22:34:39.000000Z"`), the tap will automatically migrate that value on the next run, but we recommend updating persisted state files and documentation to the new shape.
+    The tap now stores bookmarks in this nested structure. If an existing state file still contains the older flat timestamps (for example `"videos": "2019-09-27T22:34:39.000000Z"`), the tap will automatically migrate that value on the next run, but we recommend updating persisted state files and documentation to the new shape.
 
 4. Run the Tap in Discovery Mode
     This creates a catalog.json for selecting objects/fields to integrate:
@@ -156,7 +151,7 @@ This tap:
     Note, you may need to install test dependencies.
 
     ```
-    pip install -e .'[dev]'
+    pip install -e .[dev]
     ```
 ---
 

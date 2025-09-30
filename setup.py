@@ -29,5 +29,4 @@ setup(
         "tap_youtube_analytics": ["schemas/*.json", "*.json"],
     },
     include_package_data=True,
-    python_requires=">=3.7",
 )
