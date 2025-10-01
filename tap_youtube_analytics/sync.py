@@ -45,15 +45,12 @@ def sync(client: Client, config: Dict, catalog: singer.Catalog, state) -> None:
 
     with singer.Transformer() as transformer:
         for stream_name in streams_to_sync:
-            catalog_entry = catalog.get_stream(stream_name)
-            metadata_map = singer.metadata.to_map(catalog_entry.metadata)
-            lookup_name = metadata_map.get((), {}).get("lookup_name", stream_name)
-
-            if lookup_name not in streams.STREAMS:
-                LOGGER.warning(f"Stream '{lookup_name}' not found in STREAMS; skipping.")
+            if stream_name not in streams.STREAMS:
+                LOGGER.warning(f"Stream '{stream_name}' not found in STREAMS; skipping.")
                 continue
 
-            stream = streams.STREAMS[lookup_name](client, catalog_entry)
+            catalog_entry = catalog.get_stream(stream_name)
+            stream = streams.STREAMS[stream_name](client, catalog_entry)
             if stream.parent:
                 if stream.parent not in streams_to_sync:
                     streams_to_sync.append(stream.parent)
