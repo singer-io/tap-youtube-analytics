@@ -54,7 +54,7 @@ class Videos(IncrementalStream):
                 self.params = search_params
 
                 search_records = self.get_records()
-                video_ids = []
+                video_ids = set()
 
                 for search_record in search_records:
                     video_id = search_record.get("id", {}).get("videoId")
@@ -72,14 +72,13 @@ class Videos(IncrementalStream):
                     if search_record_dttm < last_dttm:
                         break
 
-                    video_ids.append(video_id)
+                    video_ids.add(video_id)
                     current_max_bookmark_date = max(
                         current_max_bookmark_date, published_at
                     )
 
                 # Move video details fetching outside the loop
-                unique_video_ids = list(set(video_ids))
-                video_id_chunks = self.chunks(unique_video_ids, 50)
+                video_id_chunks = self.chunks(video_ids, 50)
 
                 stop_fetching = False
                 for video_id_chunk in video_id_chunks:
