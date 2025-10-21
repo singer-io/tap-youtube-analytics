@@ -7,7 +7,26 @@ from tap_youtube_analytics.sync import sync
 
 LOGGER = singer.get_logger()
 
-REQUIRED_CONFIG_KEYS = ["refresh_token", "client_id", "client_secret", "channel_ids", "start_date", "user_agent"]
+REQUIRED_CONFIG_KEYS = ["client_id", "client_secret", "channel_ids", "start_date", "user_agent"]
+
+
+def ensure_refresh_token(config):
+    """Populate config['refresh_token'] from supported OAuth payloads."""
+    if config.get("refresh_token"):
+        return
+
+    for candidate in (
+        config.get("oauth_credentials"),
+        config.get("oauth"),
+    ):
+        if isinstance(candidate, dict) and candidate.get("refresh_token"):
+            config["refresh_token"] = candidate["refresh_token"]
+            return
+
+    raise ValueError(
+        "Missing refresh_token. Provide it in the config or ensure the OAuth "
+        "handshake supplies one via 'oauth_credentials'."
+    )
 
 def do_discover():
     """Discover and emit the catalog to stdout"""
@@ -21,6 +40,7 @@ def do_discover():
 def main():
     """Run the tap"""
     parsed_args = singer.utils.parse_args(REQUIRED_CONFIG_KEYS)
+    ensure_refresh_token(parsed_args.config)
     state = {}
     if parsed_args.state:
         state = parsed_args.state

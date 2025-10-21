@@ -43,6 +43,12 @@ This tap:
 
 ## Authentication
 
+The tap uses Google's OAuth 2.0 flow. When the connector runs inside Qlik
+Cloud, the authorization code exchange is handled automatically and the stored
+refresh token is injected into the tap configuration. If you're running the tap
+locally, provide `client_id`, `client_secret`, and a valid `refresh_token` in
+the config file.
+
 ## Quick Start
 
 1. Install
