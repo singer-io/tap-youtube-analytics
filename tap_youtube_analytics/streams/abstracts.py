@@ -18,6 +18,11 @@ from singer import (
     write_schema,
 )
 
+from tap_youtube_analytics.exceptions import (
+    YoutubeAnalyticsError,
+    YoutubeAnalyticsForbiddenError,
+)
+
 LOGGER = get_logger()
 ATTRIBUTION_DAYS = 7
 DEFAULT_REPORT_PAGE_SIZE = 50
@@ -591,9 +596,24 @@ class ReportStream(IncrementalStream):
                 if not page_token:
                     break
 
-        except Exception as e:
-            LOGGER.error(f"Error in YouTube Reporting API workflow: {e}")
-            return
+        except YoutubeAnalyticsForbiddenError as err:
+            LOGGER.error(
+                "YouTube Reporting API workflow failed with permission error: %s",
+                err,
+            )
+            raise
+        except YoutubeAnalyticsError as err:
+            LOGGER.error(
+                "YouTube Reporting API workflow failed: %s",
+                err,
+            )
+            raise
+        except Exception as err:
+            LOGGER.error(
+                "Unexpected error in YouTube Reporting API workflow: %s",
+                err,
+            )
+            raise
 
     def sync(
         self,
