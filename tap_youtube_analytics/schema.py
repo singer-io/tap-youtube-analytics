@@ -1,88 +1,104 @@
-import os
 import json
+import os
+from typing import Dict, Tuple
+
 import singer
 from singer import metadata
-from tap_youtube_analytics.streams import STREAMS, REPORTS
+
+from tap_youtube_analytics.streams import STREAMS
 
 LOGGER = singer.get_logger()
 
-# Reference:
-# https://github.com/singer-io/getting-started/blob/master/docs/DISCOVERY_MODE.md#Metadata
 
-def get_abs_path(path):
+def get_abs_path(path: str) -> str:
+    """Get the absolute path for the schema files."""
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
 
-def get_schemas(client):
-    schemas = {}
-    field_metadata = {}
 
-    for stream_name, stream_metadata in STREAMS.items():
-        schema_path = get_abs_path('schemas/{}.json'.format(stream_name))
-        with open(schema_path) as file:
-            schema = json.load(file)
+def load_schema_references() -> Dict:
+    """Load the shared schema files from the schema/shared folder and return references."""
+    shared_schema_path = get_abs_path("schemas/shared")
+
+    shared_file_names = []
+    if os.path.exists(shared_schema_path):
+        shared_file_names = [
+            f
+            for f in os.listdir(shared_schema_path)
+            if os.path.isfile(os.path.join(shared_schema_path, f))
+        ]
+
+    refs = {}
+    for shared_schema_file in shared_file_names:
+        with open(os.path.join(shared_schema_path, shared_schema_file)) as data_file:
+            refs["shared/" + shared_schema_file] = json.load(data_file)
+
+    return refs
+
+
+def _load_schema_for_stream(stream_name: str) -> Dict:
+    """
+    Try to load a schema specific to the stream.
+    If it doesn't exist, fall back to schemas/reports.json.
+    """
+    candidate = get_abs_path(f"schemas/{stream_name}.json")
+    fallback = get_abs_path("schemas/reports.json")
+
+    if os.path.exists(candidate):
+        path = candidate
+    elif os.path.exists(fallback):
+        LOGGER.info(
+            "Schema for stream '%s' not found at %s. Falling back to %s.",
+            stream_name, candidate, fallback
+        )
+        path = fallback
+    else:
+        # Be explicit so we don't hide real packaging issues
+        raise FileNotFoundError(
+            f"No schema file found for stream '{stream_name}'. "
+            f"Tried: {candidate} and fallback: {fallback}"
+        )
+
+    with open(path) as f:
+        return json.load(f)
+
+
+def get_schemas() -> Tuple[Dict, Dict]:
+    """
+    Load the schema references, prepare metadata for each stream,
+    and return (schemas, field_metadata) for the catalog.
+    """
+    schemas: Dict[str, Dict] = {}
+    field_metadata: Dict[str, Dict] = {}
+
+    refs = load_schema_references()
+
+    for stream_name, stream_obj in STREAMS.items():
+        # Load per-stream schema or fallback to reports.json
+        raw_schema = _load_schema_for_stream(stream_name)
+
+        # Resolve $ref entries against shared refs
+        schema = singer.resolve_schema_references(raw_schema, refs)
+
+        # Save the resolved schema
         schemas[stream_name] = schema
-        mdata = metadata.new()
 
-        # Documentation:
-        # https://github.com/singer-io/getting-started/blob/master/docs/DISCOVERY_MODE.md#singer-python-helper-functions
-        # Reference:
-        # https://github.com/singer-io/singer-python/blob/master/singer/metadata.py#L25-L44
+        # Build Singer metadata
         mdata = metadata.get_standard_metadata(
             schema=schema,
-            key_properties=stream_metadata.get('key_properties', None),
-            valid_replication_keys=stream_metadata.get('replication_keys', None),
-            replication_method=stream_metadata.get('replication_method', None)
+            key_properties=getattr(stream_obj, "key_properties", []),
+            valid_replication_keys=(getattr(stream_obj, "replication_keys", []) or []),
+            replication_method=getattr(stream_obj, "replication_method", None),
         )
+        m_map = metadata.to_map(mdata)
 
-        field_metadata[stream_name] = mdata
+        # Mark replication keys as automatic
+        automatic_keys = getattr(stream_obj, "replication_keys", []) or []
+        for field_name in schema.get("properties", {}).keys():
+            if field_name in automatic_keys:
+                m_map = metadata.write(
+                    m_map, ("properties", field_name), "inclusion", "automatic"
+                )
 
-    # Limit report endpoints to those available to the account
-    endpoint = 'report_types'
-    report_type_data = client.get(
-        url='https://youtubereporting.googleapis.com/v1',
-        path='reportTypes',
-        endpoint=endpoint
-    )
-    report_types = report_type_data.get('reportTypes', [])
-
-    for report_type in report_types:
-        # report_name = report id minus the version (last 3 chars)
-        report_name = report_type.get('id')[:-3]
-        report_metadata = REPORTS.get(report_name, {})
-
-        schema_path = get_abs_path('schemas/reports.json')
-        with open(schema_path) as file:
-            schema = json.load(file)
-
-        # dimensions, metrics, keys lists
-        dimensions = report_metadata.get('dimensions', [])
-        metrics = report_metadata.get('metrics', [])
-        key_properties = ['dimensions_hash_key']
-        report_fields = ['report_id', 'report_type_id', 'report_name', 'create_time']
-        combined_list = [*dimensions, *metrics, *key_properties, *report_fields]
-
-        # remove keys not in combined_list
-        remove = [key for key in schema['properties'] if key not in combined_list]
-        for key in remove:
-            del schema['properties'][key]
-
-        schemas[report_name] = schema
-        mdata = metadata.new()
-
-        mdata = metadata.get_standard_metadata(
-            schema=schema,
-            key_properties=key_properties,
-            valid_replication_keys=['create_time'],
-            replication_method='INCREMENTAL'
-        )
-
-        # Set dimensions and create_time (bookmark) as automatic inclusion
-        mdata_map = metadata.to_map(mdata)
-        for dimension in dimensions:
-            mdata_map[('properties', dimension)]['inclusion'] = 'automatic'
-        mdata_map[('properties', 'create_time')]['inclusion'] = 'automatic'
-        mdata = metadata.to_list(mdata_map)
-
-        field_metadata[report_name] = mdata
+        field_metadata[stream_name] = metadata.to_list(m_map)
 
     return schemas, field_metadata

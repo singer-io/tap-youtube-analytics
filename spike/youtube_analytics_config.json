@@ -1,0 +1,71 @@
+{
+    "tap_name": "youtube-analytics",
+    "required_config_keys": ["refresh_token", "client_id", "client_secret", "channel_ids", "start_date", "user_agent"],
+    "page_size": 50,
+    "next_page_key": "nextPageToken",
+    "pagination_key": "page",
+    "headers": {"Accept": "application/json"},
+    "params": {},
+    "auth_header_key": "Authorization",
+    "auth_config_key": "access_token",
+    "base_url": "https://www.googleapis.com/youtube/v3",
+    "streams": [
+      {
+        "name": "channels",
+        "key_properties": ["id"],
+        "replication_method": "FULL_TABLE",
+        "params": {
+          "part": "id,contentDetails,snippet,statistics,status",
+          "id": "{channel_ids}",
+          "maxResults": 50
+        },
+        "doc_link": "https://developers.google.com/youtube/v3/docs/channels/list"
+      },
+      {
+        "name": "playlists",
+        "key_properties": ["id"],
+        "replication_method": "FULL_TABLE",
+        "params": {
+            "part": "id,contentDetails,player,snippet,status",
+            "id": "{parent_id}",
+            "maxResults": 50
+          },
+        "doc_link": "https://developers.google.com/youtube/v3/docs/playlists/list"
+      },
+      {
+        "name": "playlist_items",
+        "key_properties": ["id"],
+        "replication_method": "INCREMENTAL",
+        "replication_keys": ["published_at"],
+        "params": {
+            "part": "id,contentDetails,snippet,status",
+            "id": "{parent_id}",
+            "maxResults": 50
+          },
+        "path": "playlistItems",
+        "doc_link": "https://developers.google.com/youtube/v3/docs/playlistItems/list"
+      },
+      {
+        "name": "videos",
+        "key_properties": ["id"],
+        "replication_method": "INCREMENTAL",
+        "replication_keys": ["published_at"],
+        "params": {
+            "part": "id,contentDetails,player,snippet,statistics,status",
+            "id": "{video_ids}",
+            "maxResults": 50
+          },
+        "doc_link": "https://developers.google.com/youtube/v3/docs/videos/list"
+      }
+    ],
+    "tap_tester_creds": {
+      "client_id": "TAP_YOUTUBE_ANALYTICS_CLIENT_ID",
+      "client_secret": "TAP_YOUTUBE_ANALYTICS_CLIENT_SECRET",
+      "refresh_token": "TAP_YOUTUBE_ANALYTICS_REFRESH_TOKEN"
+    },
+    "author": "Stitch",
+    "third_party_dependencies": [
+        "singer-python==6.1.1",
+        "requests==2.32.3"
+    ]
+  }
