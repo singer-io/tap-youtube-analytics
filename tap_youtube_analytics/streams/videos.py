@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Iterable, List
 
 from singer import Transformer, get_logger, metrics, utils, write_bookmark, write_record
 from tap_youtube_analytics.streams.abstracts import IncrementalStream
@@ -15,10 +15,11 @@ class Videos(IncrementalStream):
     path = "search"
     endpoint = "search_videos"
 
-    def chunks(self, lst, cnt):
-        """Yield successive n-sized chunks from lst."""
-        for i in range(0, len(lst), cnt):
-            yield lst[i:i + cnt]
+    def chunks(self, items: Iterable[str], cnt: int) -> Iterable[List[str]]:
+        """Yield successive n-sized chunks from any iterable."""
+        items_list = list(items)
+        for i in range(0, len(items_list), cnt):
+            yield items_list[i:i + cnt]
 
     def sync(
         self,
@@ -77,58 +78,80 @@ class Videos(IncrementalStream):
                         current_max_bookmark_date, published_at
                     )
 
-                # Move video details fetching outside the loop
-                video_id_chunks = self.chunks(video_ids, 50)
-
-                stop_fetching = False
-                for video_id_chunk in video_id_chunks:
-                    videos_params = {
-                        "part": "id,snippet",
-                        "id": ",".join(video_id_chunk)
-                    }
-
-                    self.path = "videos"
-                    self.endpoint = "videos"
-                    self.data_key = "items"
-                    self.params = videos_params
-
-                    records = self.get_records()
-
-                    for record in records:
-                        for key in self.key_properties:
-                            if not record.get(key):
-                                raise ValueError(f"Stream: {self.tap_stream_id}, Missing key: {key}")
-
-                        transformed_record = transformer.transform(
-                            self.transform_data_record(record),
-                            self.schema,
-                            self.metadata,
-                        )
-                        record_timestamp = transformed_record[self.replication_keys[0]]
-
-                        record_dttm = utils.strptime_to_utc(record_timestamp)
-                        if record_dttm >= last_dttm:
-                            if self.is_selected():
-                                write_record(self.tap_stream_id, transformed_record)
-                                counter.increment()
-                                total_written += 1
-
-                            current_max_bookmark_date = max(
-                                current_max_bookmark_date, record_timestamp
-                            )
-
-                            for child in self.child_to_sync:
-                                child.sync(state=state, transformer=transformer, parent_obj=record)
-                        else:
-                            stop_fetching = True
-                            break
-
-                    if stop_fetching:
-                        break
-
-                if stop_fetching:
-                    break
+                total_written, current_max_bookmark_date = self._fetch_and_emit_videos(
+                    video_ids=video_ids,
+                    last_dttm=last_dttm,
+                    current_max_bookmark_date=current_max_bookmark_date,
+                    transformer=transformer,
+                    counter=counter,
+                    total_written=total_written,
+                    state=state,
+                )
 
 
         state = self.write_bookmark(state, self.tap_stream_id, value=current_max_bookmark_date)
         return total_written
+
+    def _fetch_and_emit_videos(
+        self,
+        video_ids: Iterable[str],
+        last_dttm: Any,
+        current_max_bookmark_date: str,
+        transformer: Transformer,
+        counter: metrics.Counter,
+        total_written: int,
+        state: Dict,
+    ) -> (int, str):
+        """Fetch video details in chunks and emit records.
+
+        Returns updated total_written and current_max_bookmark_date.
+        """
+        video_id_chunks = self.chunks(video_ids, 50)
+
+        stop_fetching = False
+        for video_id_chunk in video_id_chunks:
+            videos_params = {
+                "part": "id,snippet",
+                "id": ",".join(video_id_chunk)
+            }
+
+            self.path = "videos"
+            self.endpoint = "videos"
+            self.data_key = "items"
+            self.params = videos_params
+
+            records = self.get_records()
+
+            for record in records:
+                for key in self.key_properties:
+                    if not record.get(key):
+                        raise ValueError(f"Stream: {self.tap_stream_id}, Missing key: {key}")
+
+                transformed_record = transformer.transform(
+                    self.transform_data_record(record),
+                    self.schema,
+                    self.metadata,
+                )
+                record_timestamp = transformed_record[self.replication_keys[0]]
+
+                record_dttm = utils.strptime_to_utc(record_timestamp)
+                if record_dttm >= last_dttm:
+                    if self.is_selected():
+                        write_record(self.tap_stream_id, transformed_record)
+                        counter.increment()
+                        total_written += 1
+
+                    current_max_bookmark_date = max(
+                        current_max_bookmark_date, record_timestamp
+                    )
+
+                    for child in self.child_to_sync:
+                        child.sync(state=state, transformer=transformer, parent_obj=record)
+                else:
+                    stop_fetching = True
+                    break
+
+            if stop_fetching:
+                break
+
+        return total_written, current_max_bookmark_date
