@@ -1,0 +1,46 @@
+version: 2.1
+orbs:
+  slack: circleci/slack@3.4.2
+
+jobs:
+  build:
+    docker:
+      - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester-uv
+    steps:
+      - checkout
+      - run:
+          name: 'Setup Virtual Env'
+          command: |
+            uv venv --python 3.12 /usr/local/share/virtualenvs/tap-youtube-analytics
+            source /usr/local/share/virtualenvs/tap-youtube-analytics/bin/activate
+            uv pip install -U pip setuptools
+            uv pip install .[dev]
+      - run:
+          name: 'JSON Validator'
+          command: |
+            source /usr/local/share/virtualenvs/tap-youtube-analytics/bin/activate
+            stitch-validate-json tap_youtube_analytics/schemas/*.json
+          no_output_timeout: 35m
+      - slack/notify-on-failure:
+          only_for_branches: master
+workflows:
+  version: 2
+  commit:
+    jobs:
+      - build:
+          context:
+            - circleci-user
+            - tap-tester-user
+  build_daily:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - build:
+          context:
+            - circleci-user
+            - tap-tester-user
