@@ -1,8 +1,10 @@
-from setuptools import setup, find_packages
+#!/usr/bin/env python
+
+from setuptools import find_packages, setup
 
 setup(name='tap-youtube-analytics',
       version='0.0.9',
-      description='Singer.io tap for extracting data from the Google Search Console API',
+      description='Singer.io tap for extracting data from the Youtube Analytics API',
       author='jeff.huth@bytecode.io',
       classifiers=['Programming Language :: Python :: 3 :: Only'],
       py_modules=['tap_youtube_analytics'],
@@ -21,10 +23,11 @@ setup(name='tap-youtube-analytics',
       entry_points='''
           [console_scripts]
           tap-youtube-analytics=tap_youtube_analytics:main
-      """,
-    packages=find_packages(),
-    package_data={
-        "tap_youtube_analytics": ["schemas/*.json", "*.json"],
-    },
-    include_package_data=True,
-)
+      ''',
+      packages=find_packages(),
+      package_data={
+          'tap_youtube_analytics': [
+              'schemas/*.json',
+              '*.json'
+          ]
+      })
