@@ -34,6 +34,10 @@ def get_schemas(client):
             replication_method=stream_metadata.get('replication_method', None)
         )
 
+        parent_tap_stream_id = stream_metadata.get('parent')
+        if parent_tap_stream_id:
+            mdata = metadata.write(mdata, (), 'parent-tap-stream-id', parent_tap_stream_id)
+
         field_metadata[stream_name] = mdata
 
     # Limit report endpoints to those available to the account
@@ -75,6 +79,10 @@ def get_schemas(client):
             valid_replication_keys=['create_time'],
             replication_method='INCREMENTAL'
         )
+
+        parent_tap_stream_id = report_metadata.get('parent')
+        if parent_tap_stream_id:
+            mdata = metadata.write(mdata, (), 'parent-tap-stream-id', parent_tap_stream_id)
 
         # Set dimensions and create_time (bookmark) as automatic inclusion
         mdata_map = metadata.to_map(mdata)
