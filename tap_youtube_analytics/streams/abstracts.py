@@ -106,7 +106,6 @@ class BaseStream(ABC):
          - https://github.com/singer-io/getting-started/blob/master/docs/SYNC_MODE.md
         """
 
-
     def get_records(self, isreport=False) -> List:
         """Interacts with api client interaction and pagination."""
         total_count = 0
@@ -214,7 +213,7 @@ class BaseStream(ABC):
     # PyHumps: camelCase to snake_case
     # Reference: https://github.com/nficano/humps
     def transform_data_record(self, record):
-        """"Transform data record to snake_case."""
+        """Transform data record to snake_case."""
         new_record = humps.decamelize(record.copy())
 
         # denest published_at
@@ -222,7 +221,6 @@ class BaseStream(ABC):
         new_record["published_at"] = published_at
 
         return new_record
-    
 
     def hash_data(self, data):
         """Create MD5 hash key for data element
@@ -231,7 +229,7 @@ class BaseStream(ABC):
         hash_id.update(repr(data).encode('utf-8'))
 
         return hash_id.hexdigest()
-    
+
     def _load_dim_lookup_map(self):
         """Load and cache the dimension lookup map"""
         if BaseStream._dim_lookup_map is None:
@@ -248,7 +246,7 @@ class BaseStream(ABC):
                 LOGGER.error(f"Failed to load dimension lookup map: {e}")
                 BaseStream._dim_lookup_map = {}
         return BaseStream._dim_lookup_map
-        
+
     # dim_lookup_map.json: code to description mapping dictionary for each dimension
     # Created from Dimensions lookup tables here:
     #   https://developers.google.com/youtube/reporting/v1/reports/dimensions#Annotation_Dimensions
@@ -291,12 +289,12 @@ class BaseStream(ABC):
 
     def append_times_to_dates(self, record: Dict) -> None:
         """Append time portion to date-only fields to ensure proper datetime format.
-        
+
         This method ensures that date fields have time components for consistent
         datetime handling across the pipeline.
         """
         date_fields = ['published_at', 'create_time', 'updated_at', 'scheduled_start_time', 'scheduled_end_time']
-        
+
         for field in date_fields:
             if field in record and record[field]:
                 try:
@@ -312,7 +310,7 @@ class BaseStream(ABC):
                 except (ValueError, TypeError) as e:
                     LOGGER.warning(f"Failed to process date field {field}: {e}")
                     continue
-    
+
 
 class IncrementalStream(BaseStream):
     """Base Class for Incremental Stream."""
@@ -359,7 +357,6 @@ class IncrementalStream(BaseStream):
             bookmarks[stream] = {key: current}
         elif current is None:
             bookmarks[stream] = {}
-
 
     def sync(
         self,
@@ -428,7 +425,8 @@ class FullTableStream(BaseStream):
                     child.sync(state=state, transformer=transformer, parent_obj=record)
 
             return counter.value
-        
+
+
 class ReportStream(IncrementalStream):
     def get_url_endpoint(self, parent_obj: Dict = None) -> str:
         return self.client.reporting_url
@@ -472,7 +470,7 @@ class ReportStream(IncrementalStream):
         if not isreport:
             # Use parent implementation for non-report streams
             return super().get_records(isreport)
-            
+
         # YouTube Reporting API workflow
         # Step 1: List existing jobs for this report type
         jobs_url = f"{self.client.reporting_url}/jobs"
@@ -540,7 +538,7 @@ class ReportStream(IncrementalStream):
             if not job_id:
                 LOGGER.error("Job found but no job ID available")
                 return
-                
+
             # Step 2: Get reports for this job
             reports_url = f"{self.client.reporting_url}/jobs/{job_id}/reports"
             reports_params = {"pageSize": DEFAULT_REPORT_PAGE_SIZE}

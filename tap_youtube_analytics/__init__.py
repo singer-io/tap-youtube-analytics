@@ -7,7 +7,7 @@ from tap_youtube_analytics.sync import sync
 
 LOGGER = singer.get_logger()
 
-REQUIRED_CONFIG_KEYS = ["client_id", "client_secret", "channel_ids", "start_date", "user_agent"]
+REQUIRED_CONFIG_KEYS = ["client_id", "client_secret", "channel_ids", "start_date", "user_agent", "refresh_token"]
 
 
 def ensure_refresh_token(config):

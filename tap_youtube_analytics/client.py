@@ -98,6 +98,7 @@ class Client:
         data = response.json()
         self.__access_token = data["access_token"]
         # Make this timezone-aware as well
+        # Use timezone-aware datetime to ensure correct comparison and avoid bugs from mixing naive and aware datetimes.
         self.__expires = datetime.now(timezone.utc) + timedelta(seconds=data["expires_in"])
         LOGGER.info(f"Authorized, token expires = {self.__expires}")
 

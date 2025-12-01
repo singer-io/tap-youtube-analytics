@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List, Tuple
 
 from singer import Transformer, get_logger, metrics, utils, write_bookmark, write_record
 from tap_youtube_analytics.streams.abstracts import IncrementalStream
@@ -101,7 +101,7 @@ class Videos(IncrementalStream):
         counter: metrics.Counter,
         total_written: int,
         state: Dict,
-    ) -> (int, str):
+    ) -> Tuple[int, str]:
         """Fetch video details in chunks and emit records.
 
         Returns updated total_written and current_max_bookmark_date.

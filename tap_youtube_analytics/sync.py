@@ -1,5 +1,5 @@
 import singer
-from typing import Dict
+from typing import Dict, Optional
 
 from tap_youtube_analytics import streams
 from tap_youtube_analytics.client import Client
@@ -7,7 +7,7 @@ from tap_youtube_analytics.client import Client
 LOGGER = singer.get_logger()
 
 
-def update_currently_syncing(state: Dict, stream_name: str) -> None:
+def update_currently_syncing(state: Dict, stream_name: Optional[str]) -> None:
     """Update currently_syncing in state and write it"""
     if not stream_name and singer.get_currently_syncing(state):
         del state["currently_syncing"]

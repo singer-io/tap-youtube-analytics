@@ -18,7 +18,6 @@ def discover() -> Catalog:
         except Exception as err:
             LOGGER.error(err)
             LOGGER.error(f"stream_name: {stream_name}")
-            LOGGER.error("type schema_dict: {type(schema_dict)}")
             raise err
 
         key_properties = metadata.to_map(mdata).get((), {}).get("table-key-properties")
