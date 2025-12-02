@@ -135,6 +135,7 @@ def get_paginated_data(client, url, path, endpoint, params, data_key='items'):
     page = 1
     is_next_page = True
     page_token = ''
+    params.pop("pageToken", None)
 
     while is_next_page:
         if page > 1:
