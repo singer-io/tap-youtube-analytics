@@ -27,14 +27,13 @@ jobs:
           name: "pylint"
           command: |
             source /usr/local/share/virtualenvs/tap-youtube-analytics/bin/activate
-            pip install pylint
             pylint tap_youtube_analytics -d C,R,W
       - add_ssh_keys
       - run:
           name: "Unit Tests"
           command: |
             source /usr/local/share/virtualenvs/tap-youtube-analytics/bin/activate
-            pip install nose coverage
+            uv pip install nose coverage
             nosetests --with-coverage --cover-erase --cover-package=tap_youtube_analytics --cover-html-dir=htmlcov tests/unittests
             coverage html
       - store_test_results:
