@@ -6,8 +6,6 @@ class YoutubeAnalyticsInterruptedSyncTest(InterruptedSyncTest, YoutubeAnalyticsB
     """Test tap sets a bookmark and respects it for the next sync of a
     stream."""
 
-    max_diff = None
-
     @staticmethod
     def name():
         return "tap_tester_youtube_analytics_interrupted_sync_test"
@@ -18,9 +16,9 @@ class YoutubeAnalyticsInterruptedSyncTest(InterruptedSyncTest, YoutubeAnalyticsB
 
     def manipulate_state(self):
         return {
-            "currently_syncing": "videos",
+            "currently_syncing": "playlist_items",
             "bookmarks": {
-                "playlist_items": {"published_at": "2020-04-20T00:00:00Z"},
-                "videos": {"published_at": "2020-04-20T00:00:00Z"}
+                "playlist_items": {"published_at": "2025-04-22T00:00:00Z"},
+                "videos": {"published_at": "2025-04-22T06:36:22Z"}
             }
         }
