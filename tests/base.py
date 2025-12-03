@@ -25,8 +25,6 @@ class YoutubeAnalyticsBaseTest(BaseCase):
     @classmethod
     def expected_metadata(cls):
         """The expected streams and metadata about the streams."""
-        # Read reports.py and add all the streams that are defined there.
-
         return {
             "channel_basic": {
                 cls.PRIMARY_KEYS: {"dimensions_hash_key", "date"},
