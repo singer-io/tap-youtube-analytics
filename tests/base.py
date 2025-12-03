@@ -20,7 +20,7 @@ class YoutubeAnalyticsBaseTest(BaseCase):
     @staticmethod
     def get_type():
         """The name of the tap."""
-        return "platform.youtube_analytics"
+        return "platform.youtube-analytics"
 
     @classmethod
     def expected_metadata(cls):
