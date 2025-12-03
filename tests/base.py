@@ -479,8 +479,8 @@ class YoutubeAnalyticsBaseTest(BaseCase):
         """Configuration of properties required for the tap."""
         return_value = {
             "start_date": self.start_date,
-            "channel_ids": os.getenv("TAP_YOUTUBE_ANALYTICS_CHANNEL_IDS", ""),
-            "user_agent": os.getenv("TAP_YOUTUBE_ANALYTICS_USER_AGENT", "")
+            "user_agent": "Singer.io Youtube Analytics Tap",
+            "channel_ids": os.getenv("TAP_YOUTUBE_ANALYTICS_CHANNEL_IDS", "")
         }
 
         return return_value
