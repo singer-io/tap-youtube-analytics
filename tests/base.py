@@ -465,11 +465,9 @@ class YoutubeAnalyticsBaseTest(BaseCase):
         """Authentication information for the test account."""
         credentials_dict = {}
         creds = {
-            "client_id": "YOUTUBE_ANALYTICS_CLIENT_ID",
-            "client_secret": "YOUTUBE_ANALYTICS_CLIENT_SECRET",
-            "refresh_token": "YOUTUBE_ANALYTICS_REFRESH_TOKEN",
-            "channel_ids": "YOUTUBE_ANALYTICS_CHANNEL_IDS",
-            "user_agent": "YOUTUBE_ANALYTICS_USER_AGENT"
+            "client_id": "TAP_YOUTUBE_ANALYTICS_CLIENT_ID",
+            "client_secret": "TAP_YOUTUBE_ANALYTICS_CLIENT_SECRET",
+            "refresh_token": "TAP_YOUTUBE_ANALYTICS_REFRESH_TOKEN"
         }
 
         for cred in creds:
@@ -481,6 +479,8 @@ class YoutubeAnalyticsBaseTest(BaseCase):
         """Configuration of properties required for the tap."""
         return_value = {
             "start_date": self.start_date,
+            "channel_ids": os.getenv("TAP_YOUTUBE_ANALYTICS_CHANNEL_IDS", ""),
+            "user_agent": os.getenv("TAP_YOUTUBE_ANALYTICS_USER_AGENT", "")
         }
 
         return return_value
