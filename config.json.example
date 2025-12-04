@@ -1,7 +1,7 @@
 {
     "client_id": "YOUR_CLIENT_ID",
     "client_secret": "YOUR_CLIENT_SECRET",
-    "refresh_token": "YOUR_REFRESH_TOKEN",
+    "refresh_token": "YOUR_REFRESH_TOKEN (managed automatically in Qlik Cloud)",
     "channel_ids": "CHANNEL_ID1, CHANNEL_ID2",
     "start_date": "2018-01-01T00:00:00Z",
     "user_agent": "tap-youtube-analytics <jeff.huth@bytecode.io>"

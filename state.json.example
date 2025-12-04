@@ -1,11 +1,21 @@
 {
-  "currently_syncing": "sitemaps",
+  "currently_syncing": "playlist_items",
   "bookmarks": {
-    "playlist_items": "2020-04-08T00:00:00.000000Z",
-    "videos": "2020-04-08T00:00:00.000000Z",
-    "channel_basic": "2020-04-08T00:00:00.000000Z",
-    "channel_province": "2020-04-08T00:00:00.000000Z",
-    "channel_traffic_source": "2020-04-08T00:00:00.000000Z",
+    "playlist_items": {
+      "published_at": "2020-04-08T00:00:00.000000Z"
+    },
+    "videos": {
+      "published_at": "2020-04-08T00:00:00.000000Z"
+    },
+    "channel_basic": {
+      "create_time": "2020-04-08T00:00:00.000000Z"
+    },
+    "channel_province": {
+      "create_time": "2020-04-08T00:00:00.000000Z"
+    },
+    "channel_traffic_source": {
+      "create_time": "2020-04-08T00:00:00.000000Z"
+    },
     ...
   }
 }
