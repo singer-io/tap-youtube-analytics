@@ -27,15 +27,14 @@ jobs:
           name: "pylint"
           command: |
             source /usr/local/share/virtualenvs/tap-youtube-analytics/bin/activate
-            pip install pylint
             pylint tap_youtube_analytics -d C,R,W
       - add_ssh_keys
       - run:
           name: "Unit Tests"
           command: |
             source /usr/local/share/virtualenvs/tap-youtube-analytics/bin/activate
-            pip install nose coverage
-            nosetests --with-coverage --cover-erase --cover-package=tap_youtube_analytics --cover-html-dir=htmlcov tests/unittests
+            uv pip install pytest coverage
+            coverage run -m pytest tests/unittests
             coverage html
       - store_test_results:
           path: test_output/report.xml
@@ -44,9 +43,10 @@ jobs:
       - run:
           name: "Integration Tests"
           command: |
+            source /usr/local/share/virtualenvs/tap-tester/bin/activate
+            uv pip install awscli
             aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
             source dev_env.sh
-            source /usr/local/share/virtualenvs/tap-tester/bin/activate
             run-test --tap=tap-youtube-analytics tests
 
 
