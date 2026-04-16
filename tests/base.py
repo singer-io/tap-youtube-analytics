@@ -440,7 +440,7 @@ class YoutubeAnalyticsBaseTest(BaseCase):
                 cls.REPLICATION_KEYS: {"published_at"},
                 cls.OBEYS_START_DATE: False,
                 cls.API_LIMIT: 100,
-                cls.PARENT_TAP_STREAM_ID: None
+                cls.PARENT_TAP_STREAM_ID: "playlists"
             },
             "playlists": {
                 cls.PRIMARY_KEYS: {"id"},

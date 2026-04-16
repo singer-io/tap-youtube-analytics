@@ -91,6 +91,10 @@ def get_schemas() -> Tuple[Dict, Dict]:
         )
         m_map = metadata.to_map(mdata)
 
+        parent_tap_stream_id = getattr(stream_obj, "parent_stream_id", None)
+        if parent_tap_stream_id:
+            m_map = metadata.write(m_map, (), 'parent-tap-stream-id', parent_tap_stream_id)
+
         # Mark replication keys as automatic
         automatic_keys = getattr(stream_obj, "replication_keys", []) or []
         for field_name in schema.get("properties", {}).keys():

@@ -13,6 +13,7 @@ class PlaylistItems(IncrementalStream):
     replication_keys = ["published_at"]
     path = "playlistItems"
     endpoint = "playlist_items"
+    parent_stream_id = "playlists"
 
     def sync(
         self,

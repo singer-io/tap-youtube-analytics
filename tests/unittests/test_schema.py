@@ -110,6 +110,50 @@ class TestSchema(unittest.TestCase):
         self.assertIn("stream1", field_metadata)
         self.assertIn("stream2", field_metadata)
 
+    @patch("tap_youtube_analytics.schema.load_schema_references")
+    @patch("tap_youtube_analytics.schema._load_schema_for_stream")
+    @patch("tap_youtube_analytics.schema.STREAMS", {
+        "child_stream": MagicMock(
+            key_properties=["id"],
+            replication_keys=["updated_at"],
+            replication_method="INCREMENTAL",
+            parent_stream_id="parent_stream",
+        ),
+    })
+    @patch("singer.resolve_schema_references")
+    @patch("singer.metadata.get_standard_metadata")
+    @patch("singer.metadata.to_map")
+    @patch("singer.metadata.write")
+    @patch("singer.metadata.to_list")
+    def test_get_schemas_writes_parent_tap_stream_id(
+        self,
+        mock_to_list,
+        mock_write,
+        mock_to_map,
+        mock_get_standard_metadata,
+        mock_resolve_schema_references,
+        mock_load_schema_for_stream,
+        mock_load_schema_references,
+    ):
+        """Test that get_schemas writes parent-tap-stream-id into metadata for streams
+        that declare parent_stream_id."""
+        mock_load_schema_references.return_value = {}
+        mock_load_schema_for_stream.return_value = {
+            "type": "object",
+            "properties": {"id": {"type": "string"}}
+        }
+        mock_resolve_schema_references.side_effect = lambda raw_schema, refs: raw_schema
+        mock_get_standard_metadata.return_value = [{"metadata": {"inclusion": "automatic"}}]
+        m_map = {(): {}}
+        mock_to_map.return_value = m_map
+        mock_write.side_effect = lambda m, path, key, value: m
+        mock_to_list.return_value = [{"breadcrumb": [], "metadata": {}}]
+
+        get_schemas()
+
+        # Assert metadata.write was called with root breadcrumb and parent-tap-stream-id
+        mock_write.assert_any_call(m_map, (), "parent-tap-stream-id", "parent_stream")
+
 
 if __name__ == "__main__":
     unittest.main()
