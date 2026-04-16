@@ -16,6 +16,7 @@ class Playlists(FullTableStream):
     data_key = "items"
     path = "playlists"
     endpoint = "playlists"
+    children = ["playlist_items"]
 
     def sync(
         self,

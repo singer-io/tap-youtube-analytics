@@ -3,21 +3,21 @@
 from setuptools import find_packages, setup
 
 setup(name='tap-youtube-analytics',
-      version='0.0.9',
+      version='0.1.0',
       description='Singer.io tap for extracting data from the Youtube Analytics API',
       author='jeff.huth@bytecode.io',
       classifiers=['Programming Language :: Python :: 3 :: Only'],
       py_modules=['tap_youtube_analytics'],
       install_requires=[
           'backoff==2.2.1',
-          'requests==2.32.5',
+          'requests==2.33.1',
           'pyhumps==3.8.0',
-          'singer-python==6.1.1'
+          'singer-python==6.8.0'
       ],
       extras_require={
           'dev': [
               'ipdb==0.13.13',
-              'pylint==3.3.6',
+              'pylint==4.0.5',
           ]
       },
       entry_points='''
