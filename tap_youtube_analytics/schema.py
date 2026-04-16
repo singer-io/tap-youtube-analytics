@@ -91,7 +91,7 @@ def get_schemas() -> Tuple[Dict, Dict]:
         )
         m_map = metadata.to_map(mdata)
 
-        parent_tap_stream_id = getattr(stream_obj, "parent", None)
+        parent_tap_stream_id = getattr(stream_obj, "parent_stream_id", None)
         if parent_tap_stream_id:
             m_map = metadata.write(m_map, (), 'parent-tap-stream-id', parent_tap_stream_id)
 
