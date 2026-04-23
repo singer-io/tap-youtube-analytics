@@ -530,11 +530,18 @@ class ReportStream(IncrementalStream):
                         endpoint=self.tap_stream_id
                     ) or {}
                 except YoutubeAnalyticsNotFoundError:
-                    # System-managed report types cannot have user-owned jobs
-                    # created; the API returns 404 in that case. Log and skip.
+                    # The YouTube Reporting API returns 404 when you attempt to
+                    # create a user-owned job for a system-managed report type
+                    # (e.g. content_owner_* types that YouTube manages on your
+                    # behalf). These types are already exposed through the jobs
+                    # list with includeSystemManaged=true, so if no match was
+                    # found above the type simply isn't available for this
+                    # account. Log and skip rather than aborting the sync.
                     LOGGER.warning(
                         "Cannot create a reporting job for report type %s "
-                        "(likely a system-managed type). Skipping stream %s.",
+                        "(system-managed types cannot have user-owned jobs; "
+                        "verify the report type is available for this account). "
+                        "Skipping stream %s.",
                         report_type,
                         self.tap_stream_id,
                     )
