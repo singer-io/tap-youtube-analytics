@@ -21,6 +21,7 @@ from singer import (
 from tap_youtube_analytics.exceptions import (
     YoutubeAnalyticsError,
     YoutubeAnalyticsForbiddenError,
+    YoutubeAnalyticsNotFoundError,
 )
 
 LOGGER = get_logger()
@@ -132,7 +133,7 @@ class BaseStream(ABC):
                 url=url,
                 path=self.path,
                 params=self.params,
-                endpoint=self.url_endpoint
+                endpoint=self.tap_stream_id
             )
             if not response or response is None or response == {}:
                 LOGGER.info("Data not found for endpoint: %s", self.url_endpoint)
@@ -489,7 +490,7 @@ class ReportStream(IncrementalStream):
                 jobs_response = self.client.get(
                     url=jobs_url,
                     params=jobs_params,
-                    endpoint=f"{self.client.reporting_url}/jobs"
+                    endpoint=self.tap_stream_id
                 )
 
                 if not jobs_response:
@@ -514,19 +515,30 @@ class ReportStream(IncrementalStream):
             if not target_job and hasattr(self, 'report_type'):
                 report_type = getattr(self, 'report_type', None)
                 LOGGER.info(
-                    "No existing job for report type %s. Creating new job.",
+                    "No existing job for report type %s. Attempting to create new job.",
                     report_type,
                 )
                 create_payload = {
                     'name': self.tap_stream_id,
                     'reportTypeId': report_type,
                 }
-                target_job = self.client.post(
-                    url=self.client.reporting_url,
-                    path='jobs',
-                    data=create_payload,
-                    endpoint='job_create'
-                ) or {}
+                try:
+                    target_job = self.client.post(
+                        url=self.client.reporting_url,
+                        path='jobs',
+                        data=create_payload,
+                        endpoint=self.tap_stream_id
+                    ) or {}
+                except YoutubeAnalyticsNotFoundError:
+                    # System-managed report types cannot have user-owned jobs
+                    # created; the API returns 404 in that case. Log and skip.
+                    LOGGER.warning(
+                        "Cannot create a reporting job for report type %s "
+                        "(likely a system-managed type). Skipping stream %s.",
+                        report_type,
+                        self.tap_stream_id,
+                    )
+                    return
 
             if not target_job:
                 LOGGER.info(
@@ -558,7 +570,7 @@ class ReportStream(IncrementalStream):
                 reports_response = self.client.get(
                     url=reports_url,
                     params=reports_params,
-                    endpoint=f"{self.client.reporting_url}/jobs/{job_id}/reports"
+                    endpoint=self.tap_stream_id
                 )
 
                 if not reports_response:
@@ -578,7 +590,7 @@ class ReportStream(IncrementalStream):
 
                     try:
                         row_count = 0
-                        for record in self.client.get_report(url=download_url, endpoint=download_url):
+                        for record in self.client.get_report(url=download_url, endpoint=self.tap_stream_id):
                             row_count += 1
                             yield (record, report)
 
@@ -596,7 +608,7 @@ class ReportStream(IncrementalStream):
 
         except YoutubeAnalyticsForbiddenError as err:
             LOGGER.error(
-                "YouTube Reporting API workflow failed with permission error: %s",
+                "YouTube Reporting API workflow failed: %s",
                 err,
             )
             raise
@@ -646,50 +658,60 @@ class ReportStream(IncrementalStream):
         self.update_params(updated_since=effective_start)
 
         with metrics.record_counter(self.tap_stream_id) as counter:
-            for item in self.get_records(isreport=True):
-                if not item:
-                    continue
+            try:
+                for item in self.get_records(isreport=True):
+                    if not item:
+                        continue
 
-                # Support either (row, report) tuples or just row dicts
-                if isinstance(item, tuple) and len(item) == 2:
-                    record, report = item
-                else:
-                    record, report = item, {}
+                    # Support either (row, report) tuples or just row dicts
+                    if isinstance(item, tuple) and len(item) == 2:
+                        record, report = item
+                    else:
+                        record, report = item, {}
 
-                dims = getattr(self, "dimensions", [])
+                    dims = getattr(self, "dimensions", [])
 
-                transformed_record = transformer.transform(
-                    self.transform_report_record(record, dims, report),
-                    self.schema,
-                    self.metadata
+                    transformed_record = transformer.transform(
+                        self.transform_report_record(record, dims, report),
+                        self.schema,
+                        self.metadata
+                    )
+
+                    record_time_raw = transformed_record.get(self.replication_keys[0])
+                    record_dttm = None
+                    if record_time_raw:
+                        try:
+                            normalized_time = self._normalize_datetime(record_time_raw)
+                            record_dttm = utils.strptime_to_utc(normalized_time)
+                        except Exception as err:
+                            LOGGER.warning(
+                                "Failed to parse record timestamp %s for stream %s: %s",
+                                record_time_raw,
+                                self.tap_stream_id,
+                                err,
+                            )
+
+                    if record_dttm and record_dttm < effective_start_dttm:
+                        continue
+
+                    if record_dttm and record_dttm > current_max_dttm:
+                        current_max_dttm = record_dttm
+
+                    if self.is_selected():
+                        write_record(self.tap_stream_id, transformed_record)
+                        counter.increment()
+
+                    for child in self.child_to_sync:
+                        child.sync(state=state, transformer=transformer, parent_obj=record)
+
+            except YoutubeAnalyticsForbiddenError as err:
+                LOGGER.warning(
+                    "Skipping stream %s: insufficient permissions (403). "
+                    "Verify OAuth scopes include yt-analytics.readonly and, "
+                    "for revenue streams, yt-analytics-monetary.readonly. Error: %s",
+                    self.tap_stream_id,
+                    err,
                 )
-
-                record_time_raw = transformed_record.get(self.replication_keys[0])
-                record_dttm = None
-                if record_time_raw:
-                    try:
-                        normalized_time = self._normalize_datetime(record_time_raw)
-                        record_dttm = utils.strptime_to_utc(normalized_time)
-                    except Exception as err:
-                        LOGGER.warning(
-                            "Failed to parse record timestamp %s for stream %s: %s",
-                            record_time_raw,
-                            self.tap_stream_id,
-                            err,
-                        )
-
-                if record_dttm and record_dttm < effective_start_dttm:
-                    continue
-
-                if record_dttm and record_dttm > current_max_dttm:
-                    current_max_dttm = record_dttm
-
-                if self.is_selected():
-                    write_record(self.tap_stream_id, transformed_record)
-                    counter.increment()
-
-                for child in self.child_to_sync:
-                    child.sync(state=state, transformer=transformer, parent_obj=record)
 
             state = self.write_bookmark(
                 state,
