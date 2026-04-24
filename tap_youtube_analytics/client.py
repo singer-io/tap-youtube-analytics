@@ -127,6 +127,18 @@ class Client:
 
         kwargs.setdefault("stream", True)
 
+        @backoff.on_exception(
+            wait_gen=backoff.expo,
+            exception=(
+                ConnectionResetError,
+                ConnectionError,
+                ChunkedEncodingError,
+                Timeout,
+                YoutubeAnalyticsBackoffError,
+            ),
+            max_tries=7,
+            factor=3,
+        )
         def _row_iterator() -> Iterator[Dict[str, Any]]:
             with metrics.http_request_timer(endpoint) as timer:
                 with self._session.request(
