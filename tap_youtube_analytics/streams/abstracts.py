@@ -541,7 +541,7 @@ class ReportStream(IncrementalStream):
                         "Cannot create a reporting job for report type %s "
                         "(system-managed types cannot have user-owned jobs; "
                         "verify the report type is available for this account). "
-                        "Skipping stream %s.",
+                        "Failing stream %s.",
                         report_type,
                         self.tap_stream_id,
                     )
@@ -713,7 +713,7 @@ class ReportStream(IncrementalStream):
 
             except YoutubeAnalyticsForbiddenError as err:
                 LOGGER.warning(
-                    "Skipping stream %s: insufficient permissions (403). "
+                    "Failing stream %s: insufficient permissions (403). "
                     "Verify OAuth scopes include yt-analytics.readonly and, "
                     "for revenue streams, yt-analytics-monetary.readonly. Error: %s",
                     self.tap_stream_id,

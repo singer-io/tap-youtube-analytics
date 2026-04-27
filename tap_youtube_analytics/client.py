@@ -178,8 +178,8 @@ class Client:
             Timeout,
             YoutubeAnalyticsBackoffError
         ),
-        max_tries=5,
-        factor=2,
+        max_tries=7,
+        factor=3,
     )
     def __make_request_raw(self, method: str, url=None, **kwargs) -> Optional[str]:
         """Performs HTTP Operations for raw data (like CSV)"""
