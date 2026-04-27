@@ -615,7 +615,7 @@ class ReportStream(IncrementalStream):
 
         except YoutubeAnalyticsForbiddenError as err:
             LOGGER.error(
-                "YouTube Reporting API workflow failed: %s",
+                "YouTube Reporting API workflow failed with permission error: %s",
                 err,
             )
             raise
