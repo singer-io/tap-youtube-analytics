@@ -536,7 +536,7 @@ class ReportStream(IncrementalStream):
                     # behalf). These types are already exposed through the jobs
                     # list with includeSystemManaged=true, so if no match was
                     # found above the type simply isn't available for this
-                    # account.
+                    # account. Log and re-raise to halt the sync.
                     LOGGER.warning(
                         "Cannot create a reporting job for report type %s "
                         "(system-managed types cannot have user-owned jobs; "
