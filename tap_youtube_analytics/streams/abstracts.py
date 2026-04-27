@@ -133,7 +133,7 @@ class BaseStream(ABC):
                 url=url,
                 path=self.path,
                 params=self.params,
-                endpoint=self.tap_stream_id
+                endpoint=self.url_endpoint
             )
             if not response or response is None or response == {}:
                 LOGGER.info("Data not found for endpoint: %s", self.url_endpoint)
@@ -490,7 +490,7 @@ class ReportStream(IncrementalStream):
                 jobs_response = self.client.get(
                     url=jobs_url,
                     params=jobs_params,
-                    endpoint=self.tap_stream_id
+                    endpoint=f"{self.client.reporting_url}/jobs"
                 )
 
                 if not jobs_response:
@@ -527,7 +527,7 @@ class ReportStream(IncrementalStream):
                         url=self.client.reporting_url,
                         path='jobs',
                         data=create_payload,
-                        endpoint=self.tap_stream_id
+                        endpoint='job_create'
                     ) or {}
                 except YoutubeAnalyticsNotFoundError:
                     # The YouTube Reporting API returns 404 when you attempt to
@@ -536,7 +536,7 @@ class ReportStream(IncrementalStream):
                     # behalf). These types are already exposed through the jobs
                     # list with includeSystemManaged=true, so if no match was
                     # found above the type simply isn't available for this
-                    # account. Log and skip rather than aborting the sync.
+                    # account. Log and re-raise to halt the sync.
                     LOGGER.warning(
                         "Cannot create a reporting job for report type %s "
                         "(system-managed types cannot have user-owned jobs; "
@@ -545,7 +545,7 @@ class ReportStream(IncrementalStream):
                         report_type,
                         self.tap_stream_id,
                     )
-                    return
+                    raise
 
             if not target_job:
                 LOGGER.info(
@@ -577,7 +577,7 @@ class ReportStream(IncrementalStream):
                 reports_response = self.client.get(
                     url=reports_url,
                     params=reports_params,
-                    endpoint=self.tap_stream_id
+                    endpoint=f"{self.client.reporting_url}/jobs/{job_id}/reports"
                 )
 
                 if not reports_response:
@@ -597,7 +597,7 @@ class ReportStream(IncrementalStream):
 
                     try:
                         row_count = 0
-                        for record in self.client.get_report(url=download_url, endpoint=self.tap_stream_id):
+                        for record in self.client.get_report(url=download_url, endpoint=download_url):
                             row_count += 1
                             yield (record, report)
 
@@ -719,6 +719,7 @@ class ReportStream(IncrementalStream):
                     self.tap_stream_id,
                     err,
                 )
+                raise
 
             state = self.write_bookmark(
                 state,
