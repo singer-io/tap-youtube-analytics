@@ -111,9 +111,9 @@ class TestReportStream(unittest.TestCase):
         ])
 
         def get_side_effect(url=None, params=None, endpoint=None):
-            if endpoint.endswith("/jobs"):
+            if endpoint and endpoint.endswith("/jobs"):
                 return next(job_calls)
-            if endpoint.endswith("/reports"):
+            if endpoint and "/reports" in endpoint:
                 try:
                     result = next(report_calls)
                 except StopIteration:

@@ -2,7 +2,7 @@ import codecs
 import csv
 from datetime import datetime, timedelta, timezone
 import json
-from typing import Any, Dict, Mapping, Optional, Tuple, Iterator
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Iterator
 
 import backoff
 import requests
@@ -127,7 +127,25 @@ class Client:
 
         kwargs.setdefault("stream", True)
 
-        def _row_iterator() -> Iterator[Dict[str, Any]]:
+        @backoff.on_exception(
+            wait_gen=backoff.expo,
+            exception=(
+                ConnectionResetError,
+                ConnectionError,
+                ChunkedEncodingError,
+                Timeout,
+                YoutubeAnalyticsBackoffError,
+            ),
+            max_tries=7,
+            factor=3,
+        )
+        def _fetch_rows() -> List[Dict[str, Any]]:
+            """Make the HTTP request, read all CSV rows into a list, and return them.
+
+            Using a regular (non-generator) function so that the backoff decorator
+            wraps the actual network I/O and row-reading work, not just the creation
+            of a generator object (which would be a no-op with respect to retries).
+            """
             with metrics.http_request_timer(endpoint) as timer:
                 with self._session.request(
                     "GET",
@@ -151,11 +169,9 @@ class Client:
                         delimiter=",",
                     )
 
-                    for row in reader:
-                        if row:
-                            yield row
+                    return [row for row in reader if row]
 
-        return _row_iterator()
+        yield from _fetch_rows()
 
     @backoff.on_exception(
         wait_gen=backoff.expo,
@@ -166,8 +182,8 @@ class Client:
             Timeout,
             YoutubeAnalyticsBackoffError
         ),
-        max_tries=5,
-        factor=2,
+        max_tries=7,
+        factor=3,
     )
     def __make_request_raw(self, method: str, url=None, **kwargs) -> Optional[str]:
         """Performs HTTP Operations for raw data (like CSV)"""
@@ -210,8 +226,8 @@ class Client:
             Timeout,
             YoutubeAnalyticsBackoffError
         ),
-        max_tries=5,
-        factor=2,
+        max_tries=7,
+        factor=3,
     )
     def __make_request(self, method: str, path=None, url=None, **kwargs) -> Optional[Mapping[Any, Any]]:
         """Performs HTTP Operations
