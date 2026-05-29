@@ -7,6 +7,11 @@ class YoutubeAnalyticsError(Exception):
         self.response = response
 
 
+class YoutubeAnalyticsNoAccessibleStreamsError(YoutubeAnalyticsError):
+    """Raised during discovery when no stream endpoints are accessible with the provided credentials."""
+    pass
+
+
 class YoutubeAnalyticsBackoffError(YoutubeAnalyticsError):
     """Class representing backoff error handling."""
     pass
