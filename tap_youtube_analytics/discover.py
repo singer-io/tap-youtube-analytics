@@ -93,6 +93,61 @@ def _check_reporting_api_access(client) -> bool:
     )
 
 
+def _prune_inaccessible_children(schemas: dict, field_metadata: dict) -> None:
+    """Remove child streams from the catalog whose parent stream was excluded.
+
+    Uses `parent-tap-stream-id` metadata to detect parent/child relationships.
+    Mutates schemas and field_metadata in place.
+    """
+    for stream_name in list(schemas.keys()):
+        mdata_map = metadata.to_map(field_metadata.get(stream_name, []))
+        parent_stream = mdata_map.get((), {}).get("parent-tap-stream-id")
+        if parent_stream and parent_stream not in schemas:
+            LOGGER.warning(
+                "Stream '%s' excluded from catalog because its parent stream '%s' is not accessible.",
+                stream_name,
+                parent_stream,
+            )
+            schemas.pop(stream_name, None)
+            field_metadata.pop(stream_name, None)
+
+
+def _apply_access_checks(client, schemas: dict, field_metadata: dict) -> None:
+    """Probe API families for read access and remove inaccessible streams.
+
+    Streams that belong to an inaccessible API family are removed from schemas and
+    field_metadata in place. Child streams are then pruned when their parent stream
+    is no longer present.
+    """
+    data_api_accessible = _check_data_api_access(client)
+    reporting_api_accessible = _check_reporting_api_access(client)
+
+    inaccessible_streams = [
+        stream_name
+        for stream_name in list(schemas.keys())
+        if (stream_name in DATA_API_STREAMS and not data_api_accessible)
+        or (stream_name not in DATA_API_STREAMS and not reporting_api_accessible)
+    ]
+
+    for stream_name in inaccessible_streams:
+        schemas.pop(stream_name, None)
+        field_metadata.pop(stream_name, None)
+
+    _prune_inaccessible_children(schemas, field_metadata)
+
+    if inaccessible_streams:
+        if not schemas:
+            raise YoutubeAnalyticsNoAccessibleStreamsError(
+                "No stream endpoints are accessible with the provided credentials. "
+                "Verify that the OAuth token has the required YouTube API scopes."
+            )
+        LOGGER.warning(
+            "The account credentials supplied do not have 'read' access to the following stream(s): %s. "
+            "These streams have been excluded from the catalog.",
+            ", ".join(sorted(inaccessible_streams)),
+        )
+
+
 def discover(client) -> Catalog:
     """Run the discovery mode, probe API access, and return the catalog.
 
@@ -103,39 +158,11 @@ def discover(client) -> Catalog:
     Streams belonging to an inaccessible API family are excluded from the catalog.
     Raises YoutubeAnalyticsNoAccessibleStreamsError if no streams pass the access check.
     """
-    data_api_accessible = _check_data_api_access(client)
-    reporting_api_accessible = _check_reporting_api_access(client)
-
-    if not data_api_accessible:
-        LOGGER.warning(
-            "YouTube Data API is not accessible. Streams %s will be excluded from the catalog.",
-            sorted(DATA_API_STREAMS),
-        )
-    if not reporting_api_accessible:
-        LOGGER.warning(
-            "YouTube Reporting API is not accessible. All report streams will be excluded from the catalog."
-        )
-
     schemas, field_metadata = get_schemas()
+    _apply_access_checks(client, schemas, field_metadata)
     catalog = Catalog([])
 
     for stream_name, schema_dict in schemas.items():
-        is_data_api_stream = stream_name in DATA_API_STREAMS
-
-        if is_data_api_stream and not data_api_accessible:
-            LOGGER.warning(
-                "Stream '%s' will be excluded from the catalog due to insufficient permissions.",
-                stream_name,
-            )
-            continue
-
-        if not is_data_api_stream and not reporting_api_accessible:
-            LOGGER.warning(
-                "Stream '%s' will be excluded from the catalog due to insufficient permissions.",
-                stream_name,
-            )
-            continue
-
         try:
             schema = Schema.from_dict(schema_dict)
             mdata = field_metadata[stream_name]
@@ -154,12 +181,6 @@ def discover(client) -> Catalog:
                 schema=schema,
                 metadata=mdata,
             )
-        )
-
-    if not catalog.streams:
-        raise YoutubeAnalyticsNoAccessibleStreamsError(
-            "No stream endpoints are accessible with the provided credentials. "
-            "Verify that the OAuth token has the required YouTube API scopes."
         )
 
     return catalog

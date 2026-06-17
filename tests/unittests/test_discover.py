@@ -6,7 +6,9 @@ from singer.catalog import Catalog, Schema
 
 from tap_youtube_analytics.discover import (
     DATA_API_STREAMS,
+    _apply_access_checks,
     _check_data_api_access,
+    _prune_inaccessible_children,
     _check_reporting_api_access,
     check_stream_access,
     discover,
@@ -35,10 +37,12 @@ def _minimal_schemas(*stream_names):
         n: {"type": "object", "properties": {"id": {"type": "string"}}}
         for n in stream_names
     }
-    meta = {
-        n: [{"breadcrumb": [], "metadata": {"table-key-properties": ["id"]}}]
-        for n in stream_names
-    }
+    meta = {}
+    for n in stream_names:
+        root_metadata = {"table-key-properties": ["id"]}
+        if n == "playlist_items":
+            root_metadata["parent-tap-stream-id"] = "playlists"
+        meta[n] = [{"breadcrumb": [], "metadata": root_metadata}]
     return schemas, meta
 
 
@@ -163,6 +167,98 @@ class TestCheckReportingApiAccess(unittest.TestCase):
         client = _make_client(jobs_side_effect=RuntimeError("network failure"))
         with self.assertRaises(RuntimeError):
             _check_reporting_api_access(client)
+
+
+# ---------------------------------------------------------------------------
+# TestPruneInaccessibleChildren
+# ---------------------------------------------------------------------------
+
+class TestPruneInaccessibleChildren(unittest.TestCase):
+
+    def test_removes_child_when_parent_absent(self):
+        schemas, field_metadata = _minimal_schemas("playlists", "playlist_items")
+        schemas.pop("playlists")
+        field_metadata.pop("playlists")
+
+        _prune_inaccessible_children(schemas, field_metadata)
+
+        self.assertNotIn("playlist_items", schemas)
+        self.assertNotIn("playlist_items", field_metadata)
+
+    def test_keeps_child_when_parent_present(self):
+        schemas, field_metadata = _minimal_schemas("playlists", "playlist_items")
+
+        _prune_inaccessible_children(schemas, field_metadata)
+
+        self.assertIn("playlist_items", schemas)
+        self.assertIn("playlist_items", field_metadata)
+
+
+# ---------------------------------------------------------------------------
+# TestApplyAccessChecks
+# ---------------------------------------------------------------------------
+
+class TestApplyAccessChecks(unittest.TestCase):
+
+    @patch("tap_youtube_analytics.discover._check_reporting_api_access")
+    @patch("tap_youtube_analytics.discover._check_data_api_access")
+    def test_excludes_data_api_streams_when_data_api_inaccessible(self, mock_data, mock_reporting):
+        schemas, field_metadata = _minimal_schemas(_DATA_STREAM, _REPORT_STREAM)
+        mock_data.return_value = False
+        mock_reporting.return_value = True
+
+        _apply_access_checks(MagicMock(), schemas, field_metadata)
+
+        self.assertNotIn(_DATA_STREAM, schemas)
+        self.assertIn(_REPORT_STREAM, schemas)
+
+    @patch("tap_youtube_analytics.discover._check_reporting_api_access")
+    @patch("tap_youtube_analytics.discover._check_data_api_access")
+    def test_excludes_reporting_streams_when_reporting_api_inaccessible(self, mock_data, mock_reporting):
+        schemas, field_metadata = _minimal_schemas(_DATA_STREAM, _REPORT_STREAM)
+        mock_data.return_value = True
+        mock_reporting.return_value = False
+
+        _apply_access_checks(MagicMock(), schemas, field_metadata)
+
+        self.assertIn(_DATA_STREAM, schemas)
+        self.assertNotIn(_REPORT_STREAM, schemas)
+
+    @patch("tap_youtube_analytics.discover._check_reporting_api_access")
+    @patch("tap_youtube_analytics.discover._check_data_api_access")
+    def test_raises_when_no_streams_accessible(self, mock_data, mock_reporting):
+        schemas, field_metadata = _minimal_schemas(_DATA_STREAM, _REPORT_STREAM)
+        mock_data.return_value = False
+        mock_reporting.return_value = False
+
+        with self.assertRaises(YoutubeAnalyticsNoAccessibleStreamsError):
+            _apply_access_checks(MagicMock(), schemas, field_metadata)
+
+    @patch("tap_youtube_analytics.discover._check_reporting_api_access")
+    @patch("tap_youtube_analytics.discover._check_data_api_access")
+    def test_prunes_child_if_parent_excluded(self, mock_data, mock_reporting):
+        schemas, field_metadata = _minimal_schemas("playlists", "playlist_items", _REPORT_STREAM)
+        mock_data.return_value = False
+        mock_reporting.return_value = True
+
+        _apply_access_checks(MagicMock(), schemas, field_metadata)
+
+        self.assertNotIn("playlists", schemas)
+        self.assertNotIn("playlist_items", schemas)
+        self.assertIn(_REPORT_STREAM, schemas)
+
+    @patch("tap_youtube_analytics.discover._check_reporting_api_access")
+    @patch("tap_youtube_analytics.discover._check_data_api_access")
+    def test_logs_warning_for_excluded_streams(self, mock_data, mock_reporting):
+        schemas, field_metadata = _minimal_schemas(_DATA_STREAM, _REPORT_STREAM)
+        mock_data.return_value = False
+        mock_reporting.return_value = True
+
+        with patch("tap_youtube_analytics.discover.LOGGER") as mock_logger:
+            _apply_access_checks(MagicMock(), schemas, field_metadata)
+
+        warning_msgs = " ".join(str(call) for call in mock_logger.warning.call_args_list)
+        self.assertIn(_DATA_STREAM, warning_msgs)
 
 
 # ---------------------------------------------------------------------------

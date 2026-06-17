@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.0
+  * Streams the credentials cannot access are now excluded from the catalog during discovery instead of failing the entire discover run.
+  * Refactored discovery to a centralized access-check flow and added/updated unit tests for access checks and stream pruning.
+
 ## 0.1.0
   * Tap refactoring
   * Fixes dependabot issues

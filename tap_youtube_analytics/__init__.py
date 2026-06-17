@@ -29,6 +29,14 @@ def ensure_refresh_token(config):
     )
 
 
+def do_discover(client):
+    """Discover and emit the catalog to stdout."""
+    LOGGER.info("Starting discover")
+    catalog = discover(client)
+    json.dump(catalog.to_dict(), sys.stdout, indent=2)
+    LOGGER.info("Finished discover")
+
+
 @singer.utils.handle_top_exception(LOGGER)
 def main():
     """Run the tap"""
@@ -40,10 +48,7 @@ def main():
 
     with Client(parsed_args.config) as client:
         if parsed_args.discover:
-            LOGGER.info("Starting discover")
-            catalog = discover(client)
-            json.dump(catalog.to_dict(), sys.stdout, indent=2)
-            LOGGER.info("Finished discover")
+            do_discover(client)
         elif parsed_args.catalog:
             sync(
                  client=client,
