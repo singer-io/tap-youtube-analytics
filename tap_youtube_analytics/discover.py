@@ -74,14 +74,14 @@ def _check_data_api_access(client) -> bool:
 
 def _check_reporting_api_access(client) -> bool:
     """
-    Probes the YouTube Reporting API by listing jobs with maxResults=1.
+    Probes the YouTube Reporting API by listing jobs with pageSize=1.
     Returns True if accessible, False on 401/403.
     """
     def _probe():
         client.get(
             url=client.reporting_url,
             path="jobs",
-            params={"maxResults": 1},
+            params={"pageSize": 1},
             endpoint="reporting_jobs",
         )
 
