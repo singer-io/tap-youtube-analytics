@@ -41,12 +41,7 @@ def check_stream_access(stream_name, probe_fn, auth_error_types):
 
 
 def _check_data_api_access(client) -> bool:
-    """
-    Probes the YouTube Data API v3 by requesting the authenticated user's channel
-    list with minimal parameters. Returns True if accessible, False on 401/403.
-
-    Non-auth errors are propagated.
-    """
+    """Probe Data API access using a minimal channels request."""
     def _probe():
         client.get(
             path="channels",
@@ -82,11 +77,7 @@ def _check_reporting_api_access(client) -> bool:
 
 
 def _prune_inaccessible_children(schemas: dict, field_metadata: dict) -> None:
-    """Remove child streams from the catalog whose parent stream was excluded.
-
-    Uses `parent-tap-stream-id` metadata to detect parent/child relationships.
-    Mutates schemas and field_metadata in place.
-    """
+    """Drop child streams whose parent stream is no longer in `schemas`."""
     for stream_name in list(schemas.keys()):
         mdata_map = metadata.to_map(field_metadata.get(stream_name, []))
         parent_stream = mdata_map.get((), {}).get("parent-tap-stream-id")
@@ -101,12 +92,7 @@ def _prune_inaccessible_children(schemas: dict, field_metadata: dict) -> None:
 
 
 def _apply_access_checks(client, schemas: dict, field_metadata: dict) -> None:
-    """Probe API families for read access and remove inaccessible streams.
-
-    Streams that belong to an inaccessible API family are removed from schemas and
-    field_metadata in place. Child streams are then pruned when their parent stream
-    is no longer present.
-    """
+    """Apply API access checks and prune inaccessible streams in place."""
     data_api_accessible = _check_data_api_access(client)
     reporting_api_accessible = _check_reporting_api_access(client)
 
@@ -138,15 +124,7 @@ def _apply_access_checks(client, schemas: dict, field_metadata: dict) -> None:
 
 
 def discover(client) -> Catalog:
-    """Run the discovery mode, probe API access, and return the catalog.
-
-    Two API families are probed:
-      - YouTube Data API v3  → covers channels, playlists, playlist_items, videos
-      - YouTube Reporting API → covers all report streams
-
-    Streams belonging to an inaccessible API family are excluded from the catalog.
-    Raises YoutubeAnalyticsNoAccessibleStreamsError if no streams pass the access check.
-    """
+    """Run discovery, filter inaccessible streams, and return the catalog."""
     schemas, field_metadata = get_schemas()
     _apply_access_checks(client, schemas, field_metadata)
     catalog = Catalog([])
