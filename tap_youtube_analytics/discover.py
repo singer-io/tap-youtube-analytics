@@ -135,15 +135,16 @@ def _apply_access_checks(client, schemas: dict, field_metadata: dict) -> None:
 
     _prune_inaccessible_children(schemas, field_metadata)
 
+    accessible_streams = [s for s in schemas]
+
+    if not accessible_streams:
+        raise YoutubeAnalyticsNoAccessibleStreamsError(
+            "HTTP-error-code: 403, Error: The credentials do not have "
+            "'read' access to any supported streams."
+        )
     if inaccessible_streams:
-        if not schemas:
-            raise YoutubeAnalyticsNoAccessibleStreamsError(
-                "No stream endpoints are accessible with the provided credentials. "
-                "Verify that the OAuth token has the required YouTube API scopes."
-            )
         LOGGER.warning(
-            "The account credentials supplied do not have 'read' access to the following stream(s): %s. "
-            "These streams have been excluded from the catalog.",
+            "No 'read' access to stream(s): %s. Excluded from catalog.",
             ", ".join(sorted(inaccessible_streams)),
         )
 
