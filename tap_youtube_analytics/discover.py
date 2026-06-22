@@ -20,16 +20,13 @@ DATA_API_STREAMS = {"channels", "playlists", "playlist_items", "videos"}
 _AUTH_ERROR_TYPES = (YoutubeAnalyticsUnauthorizedError, YoutubeAnalyticsForbiddenError)
 
 
-def check_stream_access(stream_name, probe_fn, auth_error_types, fallback_accessible=False):
+def check_stream_access(stream_name, probe_fn, auth_error_types):
     """
     Probe a stream endpoint and return True if accessible, False on auth error.
 
     :param stream_name: Used in log messages.
     :param probe_fn: Zero-argument callable that performs the API probe.
     :param auth_error_types: Exception type(s) indicating 401/403 — returns False.
-    :param fallback_accessible: If True, non-auth errors (e.g. 400 from minimal probe
-                                params) are treated as auth-OK and return True.
-                                If False (default), they are re-raised.
     """
     try:
         probe_fn()
@@ -48,9 +45,7 @@ def _check_data_api_access(client) -> bool:
     Probes the YouTube Data API v3 by requesting the authenticated user's channel
     list with minimal parameters. Returns True if accessible, False on 401/403.
 
-    Uses fallback_accessible=True because the YouTube Data API may return 400 for
-    some OAuth scopes that don't include 'mine=true' access (e.g. service accounts),
-    but a 400 still confirms the token is valid and the API is reachable.
+    Non-auth errors are propagated.
     """
     def _probe():
         client.get(
@@ -63,7 +58,6 @@ def _check_data_api_access(client) -> bool:
         "data_api",
         probe_fn=_probe,
         auth_error_types=_AUTH_ERROR_TYPES,
-        fallback_accessible=True,
     )
 
 
@@ -84,7 +78,6 @@ def _check_reporting_api_access(client) -> bool:
         "reporting_api",
         probe_fn=_probe,
         auth_error_types=_AUTH_ERROR_TYPES,
-        fallback_accessible=False,
     )
 
 

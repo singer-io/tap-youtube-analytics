@@ -91,7 +91,7 @@ class TestCheckStreamAccess(unittest.TestCase):
         result = check_stream_access("channels", probe_fn=_raise, auth_error_types=_AUTH_ERRORS)
         self.assertFalse(result)
 
-    def test_reraises_non_auth_error_when_fallback_false(self):
+    def test_reraises_non_auth_error(self):
         def _raise():
             raise RuntimeError("unexpected")
         with self.assertRaises(RuntimeError):
@@ -99,18 +99,6 @@ class TestCheckStreamAccess(unittest.TestCase):
                 "channels",
                 probe_fn=_raise,
                 auth_error_types=_AUTH_ERRORS,
-                fallback_accessible=False,
-            )
-
-    def test_reraises_on_non_auth_error_when_fallback_true(self):
-        def _raise():
-            raise RuntimeError("400 Bad Request")
-        with self.assertRaises(RuntimeError):
-            check_stream_access(
-                "channels",
-                probe_fn=_raise,
-                auth_error_types=_AUTH_ERRORS,
-                fallback_accessible=True,
             )
 
 
@@ -135,7 +123,7 @@ class TestCheckDataApiAccess(unittest.TestCase):
         client = _make_client(channels_side_effect=YoutubeAnalyticsForbiddenError("403"))
         self.assertFalse(_check_data_api_access(client))
 
-    def test_reraises_on_400_even_with_fallback_accessible(self):
+    def test_reraises_on_400(self):
         """A 400 (non-auth error) is currently propagated by check_stream_access."""
         client = _make_client(channels_side_effect=YoutubeAnalyticsBadRequestError("400"))
         with self.assertRaises(YoutubeAnalyticsBadRequestError):
@@ -163,8 +151,8 @@ class TestCheckReportingApiAccess(unittest.TestCase):
         client = _make_client(jobs_side_effect=YoutubeAnalyticsForbiddenError("403"))
         self.assertFalse(_check_reporting_api_access(client))
 
-    def test_reraises_non_auth_error_fallback_false(self):
-        """Reporting API uses fallback_accessible=False, so non-auth errors propagate."""
+    def test_reraises_non_auth_error(self):
+        """Reporting API non-auth errors are propagated."""
         client = _make_client(jobs_side_effect=RuntimeError("network failure"))
         with self.assertRaises(RuntimeError):
             _check_reporting_api_access(client)
