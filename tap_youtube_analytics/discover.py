@@ -113,8 +113,7 @@ def _apply_access_checks(client, schemas: dict, field_metadata: dict) -> None:
 
     if not accessible_streams:
         raise YoutubeAnalyticsNoAccessibleStreamsError(
-            "HTTP-error-code: 403, Error: The credentials do not have "
-            "'read' access to any supported streams."
+            "No accessible streams found. The provided credentials are missing required permissions (401/403) for all supported APIs."
         )
     if inaccessible_streams:
         LOGGER.warning(
