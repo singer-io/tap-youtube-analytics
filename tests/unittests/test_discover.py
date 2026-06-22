@@ -102,16 +102,16 @@ class TestCheckStreamAccess(unittest.TestCase):
                 fallback_accessible=False,
             )
 
-    def test_returns_true_on_non_auth_error_when_fallback_true(self):
+    def test_reraises_on_non_auth_error_when_fallback_true(self):
         def _raise():
             raise RuntimeError("400 Bad Request")
-        result = check_stream_access(
-            "channels",
-            probe_fn=_raise,
-            auth_error_types=_AUTH_ERRORS,
-            fallback_accessible=True,
-        )
-        self.assertTrue(result)
+        with self.assertRaises(RuntimeError):
+            check_stream_access(
+                "channels",
+                probe_fn=_raise,
+                auth_error_types=_AUTH_ERRORS,
+                fallback_accessible=True,
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -135,10 +135,11 @@ class TestCheckDataApiAccess(unittest.TestCase):
         client = _make_client(channels_side_effect=YoutubeAnalyticsForbiddenError("403"))
         self.assertFalse(_check_data_api_access(client))
 
-    def test_returns_true_on_400_because_fallback_accessible(self):
-        """A 400 (non-auth error) is treated as auth-OK due to fallback_accessible=True."""
+    def test_reraises_on_400_even_with_fallback_accessible(self):
+        """A 400 (non-auth error) is currently propagated by check_stream_access."""
         client = _make_client(channels_side_effect=YoutubeAnalyticsBadRequestError("400"))
-        self.assertTrue(_check_data_api_access(client))
+        with self.assertRaises(YoutubeAnalyticsBadRequestError):
+            _check_data_api_access(client)
 
 
 # ---------------------------------------------------------------------------
