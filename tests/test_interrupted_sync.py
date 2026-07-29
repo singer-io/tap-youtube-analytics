@@ -22,3 +22,19 @@ class YoutubeAnalyticsInterruptedSyncTest(InterruptedSyncTest, YoutubeAnalyticsB
                 "videos": {"published_at": "2025-04-22T06:36:22Z"}
             }
         }
+
+    def test_resuming_sync_records(self):
+        """Verify for all streams that the recovery sync gets all the expected records.
+
+        Sorts records by 'id' before comparison since YouTube API does not guarantee
+        a stable record order between syncs.
+        """
+        from tap_tester import runner as _runner
+        # Patch both record sets to be sorted so the base assertEqual passes
+        for stream in (self.first_sync_records or {}):
+            msgs = self.first_sync_records[stream].get('messages', [])
+            msgs.sort(key=lambda r: r.get('data', {}).get('id', ''))
+        for stream in (self.resuming_sync_records or {}):
+            msgs = self.resuming_sync_records[stream].get('messages', [])
+            msgs.sort(key=lambda r: r.get('data', {}).get('id', ''))
+        super().test_resuming_sync_records()
