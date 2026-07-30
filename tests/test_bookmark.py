@@ -21,7 +21,10 @@ class YoutubeAnalyticsBookmarkTest(BookmarkTest, YoutubeAnalyticsBaseTest):
         stream_id = self.get_stream_id(stream)
         stream_bookmark = state.get('bookmarks', {}).get(stream_id)
         if stream_bookmark:
-            return next(iter(stream_bookmark.values()))
+            value =  next(iter(stream_bookmark.values()))
+            if value and '.' in value:
+                value = value.split('.')[0] + 'Z'
+            return value
         return None
 
     @staticmethod
