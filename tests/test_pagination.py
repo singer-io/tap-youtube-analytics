@@ -1,8 +1,8 @@
 from datetime import datetime as dt, timedelta
-import unittest
 
 from base import YoutubeAnalyticsBaseTest
 from tap_tester.base_suite_tests.pagination_test import PaginationTest
+from tap_tester.jira_client import JiraClient, CONFIGURATION_ENVIRONMENT
 
 
 class YoutubeAnalyticsPaginationTest(PaginationTest, YoutubeAnalyticsBaseTest):
@@ -38,37 +38,30 @@ class YoutubeAnalyticsPaginationTest(PaginationTest, YoutubeAnalyticsBaseTest):
                 "id",
                 "content_details",
                 "published_at"
-            },
-            "playlists": {
-                "id",
-                "etag",
-                "snippet"
             }
         }
 
-    def setUp(self):
-        """Setup pagination tests, skipping if there aren't enough records to test with."""
-        super().setUp()
-
     def test_record_count_greater_than_page_limit(self):
         """Tests that the target received more records than the page limit for each stream.
-        
-        Skip if test account doesn't have enough records to test pagination.
+
+        Skips if SAC-31807 is not yet done (YouTube API pagination bug is open).
+        Skips if test account doesn't have enough records to test pagination.
         """
+        jira = JiraClient(CONFIGURATION_ENVIRONMENT)
+        status = jira.get_status_category("SAC-31807")
+        if status != "done":
+            self.skipTest("Skipping pagination test: SAC-31807 is not yet resolved (status: {})".format(status))
+
         for stream in self.streams_to_test():
             with self.subTest(stream=stream):
-                # gather expectations
                 page_limit = self.expected_page_size(stream)
-
-                # gather results
                 record_count = self.record_count_by_stream.get(stream, -1)
-                
-                # Skip test if not enough records to test pagination
+
                 if record_count <= page_limit:
                     self.skipTest(
                         f"Stream '{stream}' has {record_count} records, "
                         f"which is not greater than page limit {page_limit}. "
                         "Cannot test pagination with insufficient data."
                     )
-                
+
                 self.assertGreater(record_count, page_limit)

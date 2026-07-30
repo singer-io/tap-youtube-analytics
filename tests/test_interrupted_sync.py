@@ -11,7 +11,7 @@ class YoutubeAnalyticsInterruptedSyncTest(InterruptedSyncTest, YoutubeAnalyticsB
     # Narrow window to minimise /search quota usage — two syncs run back to back
     @property
     def start_date(self):
-        return self.timedelta_formatted(dt.utcnow(), delta=timedelta(days=-30))
+        return self.timedelta_formatted(dt.utcnow(), delta=timedelta(days=-7))
 
     @staticmethod
     def name():
@@ -41,7 +41,6 @@ class YoutubeAnalyticsInterruptedSyncTest(InterruptedSyncTest, YoutubeAnalyticsB
         Sorts records by 'id' before comparison since YouTube API does not guarantee
         a stable record order between syncs.
         """
-        from tap_tester import runner as _runner
         # Patch both record sets to be sorted so the base assertEqual passes
         for stream in (self.first_sync_records or {}):
             msgs = self.first_sync_records[stream].get('messages', [])

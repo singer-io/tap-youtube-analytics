@@ -21,14 +21,6 @@ class YoutubeAnalyticsBookmarkTest(BookmarkTest, YoutubeAnalyticsBaseTest):
     def name():
         return "tt_youtube_analytics_bookmark"
 
-    def setUp(self):
-        try:
-            super().setUp()
-        except IndexError as e:
-            if "list index out of range" in str(e):
-                self.skipTest("Streams do not have enough records to test bookmarks")
-            raise
-
     def get_bookmark_value(self, state, stream):
         """Extract bookmark value — YouTube Analytics stores bookmarks as {replication_key: value}."""
         stream_id = self.get_stream_id(stream)
@@ -43,3 +35,6 @@ class YoutubeAnalyticsBookmarkTest(BookmarkTest, YoutubeAnalyticsBaseTest):
             "videos": {"id", "content_details", "published_at"},
             "playlist_items": {"id", "etag", "snippet"},
         }
+
+
+
