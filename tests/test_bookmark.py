@@ -9,7 +9,7 @@ class YoutubeAnalyticsBookmarkTest(BookmarkTest, YoutubeAnalyticsBaseTest):
     def streams_to_test():
         return {'videos', 'playlist_items'}
 
-    bookmark_format = "%Y-%m-%dT%H:%M:%SZ"
+    bookmark_format = "%Y-%m-%dT%H:%M:%S.%fZ"
     initial_bookmarks = {}
 
     @staticmethod
