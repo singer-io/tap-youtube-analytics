@@ -1,14 +1,9 @@
-from datetime import datetime as dt, timedelta
 from base import YoutubeAnalyticsBaseTest
 from tap_tester.base_suite_tests.bookmark_test import BookmarkTest
 
 
 class YoutubeAnalyticsBookmarkTest(BookmarkTest, YoutubeAnalyticsBaseTest):
     """Standard bookmark test for tap-youtube-analytics."""
-
-    @property
-    def start_date(self):
-        return self.timedelta_formatted(dt.utcnow(), delta=timedelta(days=-5))
 
     @staticmethod
     def streams_to_test():
@@ -35,6 +30,3 @@ class YoutubeAnalyticsBookmarkTest(BookmarkTest, YoutubeAnalyticsBaseTest):
             "videos": {"id", "content_details", "published_at"},
             "playlist_items": {"id", "etag", "snippet"},
         }
-
-
-
