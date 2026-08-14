@@ -305,7 +305,10 @@ class TestDiscover(unittest.TestCase):
 
         with self.assertRaises(YoutubeAnalyticsNoAccessibleStreamsError) as ctx:
             discover(MagicMock())
-        self.assertIn("No accessible streams found.", str(ctx.exception))
+        self.assertIn(
+            "HTTP-error-code: 403, Error: The credentials do not have 'read' access to any supported streams.",
+            str(ctx.exception),
+        )
 
     @patch("tap_youtube_analytics.discover._check_reporting_api_access")
     @patch("tap_youtube_analytics.discover._check_data_api_access")
