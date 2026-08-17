@@ -136,13 +136,13 @@ class TestEntrypointCoverage(unittest.TestCase):
         with self.assertRaises(ValueError):
             tap_main.ensure_refresh_token({})
 
-    @patch("tap_youtube_analytics.__init__.discover")
+    @patch("tap_youtube_analytics.discover")
     def test_do_discover_writes_json(self, mock_discover):
         catalog = MagicMock()
         catalog.to_dict.return_value = {"streams": []}
         mock_discover.return_value = catalog
 
-        with patch("json.dump") as mock_dump:
+        with patch("tap_youtube_analytics.json.dump") as mock_dump:
             tap_main.do_discover(MagicMock())
         mock_dump.assert_called_once()
 
@@ -272,18 +272,22 @@ class TestClientCoverage(unittest.TestCase):
         response.status_code = 429
         response.__enter__.return_value = response
         response.__exit__.return_value = None
-        with patch.object(self.client._session, "request", return_value=response):
-            with self.assertRaises(YoutubeAnalyticsRateLimitError):
-                list(self.client.get_report(url="https://download.test", endpoint="rep"))
+        identity_decorator = lambda *args, **kwargs: (lambda func: func)
+        with patch("tap_youtube_analytics.client.backoff.on_exception", side_effect=identity_decorator):
+            with patch.object(self.client._session, "request", return_value=response):
+                with self.assertRaises(YoutubeAnalyticsRateLimitError):
+                    list(self.client.get_report(url="https://download.test", endpoint="rep"))
 
     def test_get_report_server_error_backoff(self):
         response = MagicMock()
         response.status_code = 500
         response.__enter__.return_value = response
         response.__exit__.return_value = None
-        with patch.object(self.client._session, "request", return_value=response):
-            with self.assertRaises(Exception):
-                list(self.client.get_report(url="https://download.test"))
+        identity_decorator = lambda *args, **kwargs: (lambda func: func)
+        with patch("tap_youtube_analytics.client.backoff.on_exception", side_effect=identity_decorator):
+            with patch.object(self.client._session, "request", return_value=response):
+                with self.assertRaises(YoutubeAnalyticsBackoffError):
+                    list(self.client.get_report(url="https://download.test"))
 
     def test_make_request_raw_success(self):
         response = MagicMock()

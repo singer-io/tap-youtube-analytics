@@ -260,12 +260,22 @@ class TestPruneInaccessibleChildren(unittest.TestCase):
 
 class TestApplyAccessChecks(unittest.TestCase):
 
+    @patch("tap_youtube_analytics.discover._check_reporting_stream_access")
+    @patch("tap_youtube_analytics.discover._list_available_reporting_job_types")
     @patch("tap_youtube_analytics.discover._check_reporting_api_access")
     @patch("tap_youtube_analytics.discover._check_data_api_access")
-    def test_excludes_data_api_streams_when_data_api_inaccessible(self, mock_data, mock_reporting):
+    def test_excludes_data_api_streams_when_data_api_inaccessible(
+        self,
+        mock_data,
+        mock_reporting,
+        mock_available_types,
+        mock_reporting_stream_access,
+    ):
         schemas, field_metadata = _minimal_schemas(_DATA_STREAM, _REPORT_STREAM)
         mock_data.return_value = False
         mock_reporting.return_value = True
+        mock_available_types.return_value = set()
+        mock_reporting_stream_access.return_value = True
 
         _apply_access_checks(MagicMock(), schemas, field_metadata)
 
@@ -301,7 +311,9 @@ class TestApplyAccessChecks(unittest.TestCase):
         mock_data.return_value = False
         mock_reporting.return_value = True
 
-        _apply_access_checks(MagicMock(), schemas, field_metadata)
+        with patch("tap_youtube_analytics.discover._list_available_reporting_job_types", return_value=set()):
+            with patch("tap_youtube_analytics.discover._check_reporting_stream_access", return_value=True):
+                _apply_access_checks(MagicMock(), schemas, field_metadata)
 
         self.assertNotIn("playlists", schemas)
         self.assertNotIn("playlist_items", schemas)
@@ -315,7 +327,9 @@ class TestApplyAccessChecks(unittest.TestCase):
         mock_reporting.return_value = True
 
         with patch("tap_youtube_analytics.discover.LOGGER") as mock_logger:
-            _apply_access_checks(MagicMock(), schemas, field_metadata)
+            with patch("tap_youtube_analytics.discover._list_available_reporting_job_types", return_value=set()):
+                with patch("tap_youtube_analytics.discover._check_reporting_stream_access", return_value=True):
+                    _apply_access_checks(MagicMock(), schemas, field_metadata)
 
         warning_msgs = " ".join(str(call) for call in mock_logger.warning.call_args_list)
         self.assertIn(_DATA_STREAM, warning_msgs)
@@ -357,7 +371,9 @@ class TestDiscover(unittest.TestCase):
         mock_data.return_value = True
         mock_reporting.return_value = True
 
-        catalog = discover(MagicMock())
+        with patch("tap_youtube_analytics.discover._list_available_reporting_job_types", return_value=set()):
+            with patch("tap_youtube_analytics.discover._check_reporting_stream_access", return_value=True):
+                catalog = discover(MagicMock())
         stream_ids = {s.tap_stream_id for s in catalog.streams}
         self.assertIn(_DATA_STREAM, stream_ids)
         self.assertIn(_REPORT_STREAM, stream_ids)
@@ -370,7 +386,9 @@ class TestDiscover(unittest.TestCase):
         mock_data.return_value = False
         mock_reporting.return_value = True
 
-        catalog = discover(MagicMock())
+        with patch("tap_youtube_analytics.discover._list_available_reporting_job_types", return_value=set()):
+            with patch("tap_youtube_analytics.discover._check_reporting_stream_access", return_value=True):
+                catalog = discover(MagicMock())
         stream_ids = {s.tap_stream_id for s in catalog.streams}
         self.assertNotIn(_DATA_STREAM, stream_ids)
         self.assertIn(_REPORT_STREAM, stream_ids)
@@ -414,7 +432,9 @@ class TestDiscover(unittest.TestCase):
         mock_data.return_value = True
         mock_reporting.return_value = True
 
-        discover(MagicMock())
+        with patch("tap_youtube_analytics.discover._list_available_reporting_job_types", return_value=set()):
+            with patch("tap_youtube_analytics.discover._check_reporting_stream_access", return_value=True):
+                discover(MagicMock())
         mock_data.assert_called_once()
         mock_reporting.assert_called_once()
 
@@ -427,7 +447,9 @@ class TestDiscover(unittest.TestCase):
         mock_data.return_value = True
         mock_reporting.return_value = True
 
-        catalog = discover(MagicMock())
+        with patch("tap_youtube_analytics.discover._list_available_reporting_job_types", return_value=set()):
+            with patch("tap_youtube_analytics.discover._check_reporting_stream_access", return_value=True):
+                catalog = discover(MagicMock())
         self.assertIsInstance(catalog, Catalog)
         for entry in catalog.streams:
             self.assertIsNotNone(entry.tap_stream_id)
