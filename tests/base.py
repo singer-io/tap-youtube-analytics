@@ -503,6 +503,19 @@ class YoutubeAnalyticsBaseTest(BaseCase):
         """Return a set of streams to exclude from testing."""
         # We don't have access to these streams
         return {
+            'playlist_basic',
+            'channel_demographics',
+            'channel_province',
+            'channel_device_os',
+            'playlist_device_os',
+            'channel_playback_location',
+            'playlist_province',
+            'playlist_playback_location',
+            'playlist_combined',
+            'channel_traffic_source',
+            'channel_subtitles',
+            'playlist_traffic_source',
+            'channel_combined',
             'content_owner_playlist_traffic_source',
             'content_owner_end_screens',
             'content_owner_playlist_province',
