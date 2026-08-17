@@ -8,6 +8,8 @@ from tap_youtube_analytics.discover import (
     DATA_API_STREAMS,
     _apply_access_checks,
     _check_data_api_access,
+    _check_reporting_stream_access,
+    _list_available_reporting_job_types,
     _prune_inaccessible_children,
     _check_reporting_api_access,
     check_stream_access,
@@ -16,6 +18,7 @@ from tap_youtube_analytics.discover import (
 from tap_youtube_analytics.exceptions import (
     YoutubeAnalyticsBadRequestError,
     YoutubeAnalyticsForbiddenError,
+    YoutubeAnalyticsNotFoundError,
     YoutubeAnalyticsNoAccessibleStreamsError,
     YoutubeAnalyticsUnauthorizedError,
 )
@@ -158,6 +161,74 @@ class TestCheckReportingApiAccess(unittest.TestCase):
             _check_reporting_api_access(client)
 
 
+class TestReportingStreamAccess(unittest.TestCase):
+
+    def test_list_available_reporting_job_types_collects_ids(self):
+        client = MagicMock()
+        client.reporting_url = "https://youtubereporting.googleapis.com/v1"
+        client.get.return_value = {
+            "jobs": [
+                {"id": "j1", "reportTypeId": "channel_basic_a3"},
+                {"id": "j2", "reportTypeId": "content_owner_basic_a4"},
+            ]
+        }
+
+        report_types = _list_available_reporting_job_types(client)
+        self.assertEqual(report_types, {"channel_basic_a3", "content_owner_basic_a4"})
+
+    def test_reporting_stream_access_true_when_type_in_existing_jobs(self):
+        client = MagicMock()
+        client.reporting_url = "https://youtubereporting.googleapis.com/v1"
+
+        result = _check_reporting_stream_access(
+            client,
+            stream_name="content_owner_basic",
+            available_report_types={"content_owner_basic_a4"},
+        )
+
+        self.assertTrue(result)
+        client.post.assert_not_called()
+
+    def test_reporting_stream_access_false_on_post_403(self):
+        client = MagicMock()
+        client.reporting_url = "https://youtubereporting.googleapis.com/v1"
+        client.post.side_effect = YoutubeAnalyticsForbiddenError("403")
+
+        result = _check_reporting_stream_access(
+            client,
+            stream_name="content_owner_basic",
+            available_report_types=set(),
+        )
+
+        self.assertFalse(result)
+
+    def test_reporting_stream_access_false_on_post_404(self):
+        client = MagicMock()
+        client.reporting_url = "https://youtubereporting.googleapis.com/v1"
+        client.post.side_effect = YoutubeAnalyticsNotFoundError("404")
+
+        result = _check_reporting_stream_access(
+            client,
+            stream_name="content_owner_basic",
+            available_report_types=set(),
+        )
+
+        self.assertFalse(result)
+
+    def test_reporting_stream_access_true_when_post_succeeds(self):
+        client = MagicMock()
+        client.reporting_url = "https://youtubereporting.googleapis.com/v1"
+        client.post.return_value = {"id": "new-job", "reportTypeId": "channel_basic_a3"}
+
+        result = _check_reporting_stream_access(
+            client,
+            stream_name="channel_basic",
+            available_report_types=set(),
+        )
+
+        self.assertTrue(result)
+
+
 # ---------------------------------------------------------------------------
 # TestPruneInaccessibleChildren
 # ---------------------------------------------------------------------------
@@ -248,6 +319,28 @@ class TestApplyAccessChecks(unittest.TestCase):
 
         warning_msgs = " ".join(str(call) for call in mock_logger.warning.call_args_list)
         self.assertIn(_DATA_STREAM, warning_msgs)
+
+    @patch("tap_youtube_analytics.discover._check_reporting_stream_access")
+    @patch("tap_youtube_analytics.discover._list_available_reporting_job_types")
+    @patch("tap_youtube_analytics.discover._check_reporting_api_access")
+    @patch("tap_youtube_analytics.discover._check_data_api_access")
+    def test_excludes_reporting_stream_when_stream_level_probe_fails(
+        self,
+        mock_data,
+        mock_reporting,
+        mock_available_types,
+        mock_stream_probe,
+    ):
+        schemas, field_metadata = _minimal_schemas("channels", "content_owner_basic")
+        mock_data.return_value = True
+        mock_reporting.return_value = True
+        mock_available_types.return_value = set()
+        mock_stream_probe.side_effect = lambda _client, stream_name, _types: stream_name != "content_owner_basic"
+
+        _apply_access_checks(MagicMock(), schemas, field_metadata)
+
+        self.assertIn("channels", schemas)
+        self.assertNotIn("content_owner_basic", schemas)
 
 
 # ---------------------------------------------------------------------------

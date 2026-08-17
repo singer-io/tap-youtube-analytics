@@ -4,9 +4,11 @@ from singer.catalog import Catalog, CatalogEntry, Schema
 from tap_youtube_analytics.exceptions import (
     YoutubeAnalyticsUnauthorizedError,
     YoutubeAnalyticsForbiddenError,
+    YoutubeAnalyticsNotFoundError,
     YoutubeAnalyticsNoAccessibleStreamsError,
 )
 from tap_youtube_analytics.schema import get_schemas
+from tap_youtube_analytics.streams import STREAMS
 
 LOGGER = singer.get_logger()
 
@@ -76,6 +78,84 @@ def _check_reporting_api_access(client) -> bool:
     )
 
 
+def _list_available_reporting_job_types(client) -> set:
+    """Return reportTypeIds for existing system-managed or user jobs."""
+    jobs_url = f"{client.reporting_url}/jobs"
+    params = {
+        "includeSystemManaged": "true",
+        "pageSize": 50,
+    }
+
+    report_types = set()
+    page_token = None
+
+    while True:
+        query_params = dict(params)
+        if page_token:
+            query_params["pageToken"] = page_token
+
+        response = client.get(
+            url=jobs_url,
+            params=query_params,
+            endpoint="reporting_jobs",
+        ) or {}
+
+        for job in response.get("jobs", []):
+            report_type = job.get("reportTypeId")
+            if report_type:
+                report_types.add(report_type)
+
+        page_token = response.get("nextPageToken")
+        if not page_token:
+            break
+
+    return report_types
+
+
+def _check_reporting_stream_access(client, stream_name: str, available_report_types: set) -> bool:
+    """
+    Probe access for a reporting stream at the same permission level as sync.
+
+    If a report type does not already have an available job, probe by attempting
+    to create one (same flow sync uses). This catches streams that pass GET /jobs
+    but fail POST /jobs due to missing scopes/content-owner permissions.
+    """
+    stream_cls = STREAMS.get(stream_name)
+    report_type = getattr(stream_cls, "report_type", None) if stream_cls else None
+
+    if not report_type:
+        return True
+
+    if report_type in available_report_types:
+        return True
+
+    create_payload = {
+        "name": stream_name,
+        "reportTypeId": report_type,
+    }
+
+    try:
+        client.post(
+            url=client.reporting_url,
+            path="jobs",
+            data=create_payload,
+            endpoint="job_create",
+        )
+        LOGGER.info(
+            "Reporting stream '%s' passed create-job probe for report type '%s'.",
+            stream_name,
+            report_type,
+        )
+        return True
+    except (YoutubeAnalyticsUnauthorizedError, YoutubeAnalyticsForbiddenError, YoutubeAnalyticsNotFoundError):
+        LOGGER.warning(
+            "Reporting stream '%s' is not accessible for report type '%s' with current credentials.",
+            stream_name,
+            report_type,
+        )
+        return False
+
+
 def _prune_inaccessible_children(schemas: dict, field_metadata: dict) -> None:
     """Drop child streams whose parent stream is no longer in `schemas`."""
     for stream_name in list(schemas.keys()):
@@ -96,11 +176,25 @@ def _apply_access_checks(client, schemas: dict, field_metadata: dict) -> None:
     data_api_accessible = _check_data_api_access(client)
     reporting_api_accessible = _check_reporting_api_access(client)
 
+    reporting_stream_access = {}
+    if reporting_api_accessible:
+        available_report_types = _list_available_reporting_job_types(client)
+        for stream_name in list(schemas.keys()):
+            if stream_name not in DATA_API_STREAMS:
+                reporting_stream_access[stream_name] = _check_reporting_stream_access(
+                    client,
+                    stream_name,
+                    available_report_types,
+                )
+
     inaccessible_streams = [
         stream_name
         for stream_name in list(schemas.keys())
         if (stream_name in DATA_API_STREAMS and not data_api_accessible)
-        or (stream_name not in DATA_API_STREAMS and not reporting_api_accessible)
+        or (stream_name not in DATA_API_STREAMS and (
+            not reporting_api_accessible
+            or not reporting_stream_access.get(stream_name, True)
+        ))
     ]
 
     for stream_name in inaccessible_streams:
