@@ -389,6 +389,88 @@ class TestSchemaDiscoverExtraCoverage(unittest.TestCase):
                 discover(MagicMock())
             self.assertTrue(mock_logger.error.called)
 
+    def test_list_available_reporting_job_types_uses_page_token(self):
+        discover_module = importlib.import_module("tap_youtube_analytics.discover")
+
+        client = MagicMock()
+        client.reporting_url = "https://reporting.test"
+        client.get.side_effect = [
+            {
+                "jobs": [{"reportTypeId": "rt_a"}],
+                "nextPageToken": "token-2",
+            },
+            {
+                "jobs": [{"reportTypeId": "rt_b"}],
+            },
+        ]
+
+        report_types = discover_module._list_available_reporting_job_types(client)
+
+        self.assertEqual(report_types, {"rt_a", "rt_b"})
+        second_call_params = client.get.call_args_list[1].kwargs["params"]
+        self.assertEqual(second_call_params["pageToken"], "token-2")
+
+    def test_check_reporting_stream_access_short_circuits_when_job_type_exists(self):
+        discover_module = importlib.import_module("tap_youtube_analytics.discover")
+
+        client = MagicMock()
+        stream_obj = SimpleNamespace(report_type="rt_existing")
+
+        with patch.dict("tap_youtube_analytics.discover.STREAMS", {"existing_stream": stream_obj}, clear=True):
+            is_accessible = discover_module._check_reporting_stream_access(
+                client,
+                "existing_stream",
+                {"rt_existing"},
+            )
+
+        self.assertTrue(is_accessible)
+        client.post.assert_not_called()
+
+    def test_check_reporting_stream_access_short_circuits_without_report_type(self):
+        discover_module = importlib.import_module("tap_youtube_analytics.discover")
+
+        client = MagicMock()
+        stream_obj = SimpleNamespace()
+
+        with patch.dict("tap_youtube_analytics.discover.STREAMS", {"no_type_stream": stream_obj}, clear=True):
+            is_accessible = discover_module._check_reporting_stream_access(
+                client,
+                "no_type_stream",
+                {"unused"},
+            )
+
+        self.assertTrue(is_accessible)
+        client.post.assert_not_called()
+
+    def test_get_schemas_marks_replication_keys_automatic(self):
+        from tap_youtube_analytics import schema as schema_module
+
+        stream_obj = SimpleNamespace(
+            key_properties=["id"],
+            replication_keys=["updated_at"],
+            replication_method="INCREMENTAL",
+            parent_stream_id=None,
+        )
+        raw_schema = {
+            "type": "object",
+            "properties": {
+                "id": {"type": ["null", "string"]},
+                "updated_at": {"type": ["null", "string"]},
+            },
+        }
+
+        with patch.dict("tap_youtube_analytics.schema.STREAMS", {"test_stream": stream_obj}, clear=True):
+            with patch("tap_youtube_analytics.schema.load_schema_references", return_value={}):
+                with patch("tap_youtube_analytics.schema._load_schema_for_stream", return_value=raw_schema):
+                    with patch("tap_youtube_analytics.schema.singer.resolve_schema_references", return_value=raw_schema):
+                        _, field_metadata = schema_module.get_schemas()
+
+        metadata_map = metadata.to_map(field_metadata["test_stream"])
+        self.assertEqual(
+            metadata_map[("properties", "updated_at")]["inclusion"],
+            "automatic",
+        )
+
 
 class TestStreamsExtraCoverage(unittest.TestCase):
     def _make_client(self):
