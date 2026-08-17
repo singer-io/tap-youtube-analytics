@@ -484,6 +484,11 @@ class YoutubeAnalyticsBaseTest(BaseCase):
 
         return return_value
 
+    @classmethod
+    def expected_stream_names(cls):
+        """Return expected discovered streams for this test account."""
+        return set(cls.expected_metadata().keys()).difference(cls.get_streams_to_exclude())
+
     def expected_parent_tap_stream(self, stream=None):
         """return a dictionary with key of table name and value of parent stream"""
         parent_stream = {
@@ -493,7 +498,8 @@ class YoutubeAnalyticsBaseTest(BaseCase):
             return parent_stream
         return parent_stream[stream]
 
-    def get_streams_to_exclude(self):
+    @staticmethod
+    def get_streams_to_exclude():
         """Return a set of streams to exclude from testing."""
         # We don't have access to these streams
         return {
