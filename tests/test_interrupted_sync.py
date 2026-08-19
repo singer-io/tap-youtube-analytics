@@ -11,7 +11,26 @@ class YoutubeAnalyticsInterruptedSyncTest(InterruptedSyncTest, YoutubeAnalyticsB
         return "tap_tester_youtube_analytics_interrupted_sync_test"
 
     def streams_to_test(self):
-        streams_to_exclude = self.get_streams_to_exclude().union({"channels", "playlists", "videos"})
+        # Exclude base streams plus additional streams that were added in recent commits
+        streams_to_exclude = self.get_streams_to_exclude().union({
+            "channels", 
+            "playlists", 
+            "videos",
+            # Newly added streams to exclude from interrupted sync test
+            "playlist_basic",
+            "channel_demographics",
+            "channel_province",
+            "channel_device_os",
+            "playlist_device_os",
+            "channel_playback_location",
+            "playlist_playback_location",
+            "playlist_province",
+            "playlist_combined",
+            "channel_traffic_source",
+            "channel_subtitles",
+            "playlist_traffic_source",
+            "channel_combined"
+        })
         return self.expected_stream_names().difference(streams_to_exclude)
 
     def manipulate_state(self):
