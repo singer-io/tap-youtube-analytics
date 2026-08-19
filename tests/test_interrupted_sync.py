@@ -6,9 +6,29 @@ class YoutubeAnalyticsInterruptedSyncTest(InterruptedSyncTest, YoutubeAnalyticsB
     """Test tap sets a bookmark and respects it for the next sync of a
     stream."""
 
+    NEWLY_DISCOVERED_STREAMS = {
+        "playlist_basic",
+        "channel_demographics",
+        "channel_province",
+        "channel_device_os",
+        "playlist_device_os",
+        "channel_playback_location",
+        "playlist_playback_location",
+        "playlist_province",
+        "playlist_combined",
+        "channel_traffic_source",
+        "channel_subtitles",
+        "playlist_traffic_source",
+        "channel_combined"
+    }
+
     @staticmethod
     def name():
         return "tap_tester_youtube_analytics_interrupted_sync_test"
+
+    @classmethod
+    def expected_stream_names(cls):
+        return super().expected_stream_names().union(cls.NEWLY_DISCOVERED_STREAMS)
 
     def streams_to_test(self):
         # Exclude base streams plus additional streams that were added in recent commits
@@ -17,19 +37,7 @@ class YoutubeAnalyticsInterruptedSyncTest(InterruptedSyncTest, YoutubeAnalyticsB
             "playlists", 
             "videos",
             # Newly added streams to exclude from interrupted sync test
-            "playlist_basic",
-            "channel_demographics",
-            "channel_province",
-            "channel_device_os",
-            "playlist_device_os",
-            "channel_playback_location",
-            "playlist_playback_location",
-            "playlist_province",
-            "playlist_combined",
-            "channel_traffic_source",
-            "channel_subtitles",
-            "playlist_traffic_source",
-            "channel_combined"
+            *self.NEWLY_DISCOVERED_STREAMS
         })
         return self.expected_stream_names().difference(streams_to_exclude)
 
