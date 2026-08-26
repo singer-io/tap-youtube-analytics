@@ -5,6 +5,26 @@ from tap_tester.base_suite_tests.bookmark_test import BookmarkTest
 class YoutubeAnalyticsBookmarkTest(BookmarkTest, YoutubeAnalyticsBaseTest):
     """Standard bookmark test for tap-youtube-analytics."""
 
+    NEWLY_DISCOVERED_STREAMS = {
+        "playlist_basic",
+        "channel_demographics",
+        "channel_province",
+        "channel_device_os",
+        "playlist_device_os",
+        "channel_playback_location",
+        "playlist_playback_location",
+        "playlist_province",
+        "playlist_combined",
+        "channel_traffic_source",
+        "channel_subtitles",
+        "playlist_traffic_source",
+        "channel_combined"
+    }
+
+    @classmethod
+    def expected_stream_names(cls):
+        return super().expected_stream_names().union(cls.NEWLY_DISCOVERED_STREAMS)
+
     @staticmethod
     def streams_to_test():
         return {'videos', 'playlist_items'}

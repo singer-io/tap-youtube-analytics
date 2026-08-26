@@ -10,6 +10,26 @@ class YoutubeAnalyticsPaginationTest(PaginationTest, YoutubeAnalyticsBaseTest):
     Test that tap-youtube-analytics properly handles paginated API responses.
     """
 
+    NEWLY_DISCOVERED_STREAMS = {
+        "playlist_basic",
+        "channel_demographics",
+        "channel_province",
+        "channel_device_os",
+        "playlist_device_os",
+        "channel_playback_location",
+        "playlist_playback_location",
+        "playlist_province",
+        "playlist_combined",
+        "channel_traffic_source",
+        "channel_subtitles",
+        "playlist_traffic_source",
+        "channel_combined"
+    }
+
+    @classmethod
+    def expected_stream_names(cls):
+        return super().expected_stream_names().union(cls.NEWLY_DISCOVERED_STREAMS)
+
     @property
     def start_date(self):
         """Set start_date further back to ensure videos have accumulated over time."""
