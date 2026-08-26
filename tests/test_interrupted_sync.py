@@ -1,3 +1,5 @@
+from datetime import datetime as dt, timedelta
+
 from base import YoutubeAnalyticsBaseTest
 from tap_tester.base_suite_tests.interrupted_sync_test import InterruptedSyncTest
 
