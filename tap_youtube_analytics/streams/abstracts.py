@@ -237,7 +237,7 @@ class BaseStream(ABC):
             map_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'dim_lookup_map.json')
             try:
                 if os.path.exists(map_path):
-                    with open(map_path) as file:
+                    with open(map_path, encoding="utf-8") as file:
                         BaseStream._dim_lookup_map = json.load(file)
                         LOGGER.info("Loaded dimension lookup map from file")
                 else:
@@ -536,16 +536,16 @@ class ReportStream(IncrementalStream):
                     # behalf). These types are already exposed through the jobs
                     # list with includeSystemManaged=true, so if no match was
                     # found above the type simply isn't available for this
-                    # account. Log and re-raise to halt the sync.
+                    # account. Log and skip this stream.
                     LOGGER.warning(
                         "Cannot create a reporting job for report type %s "
                         "(system-managed types cannot have user-owned jobs; "
                         "verify the report type is available for this account). "
-                        "Failing stream %s.",
+                        "Skipping stream %s.",
                         report_type,
                         self.tap_stream_id,
                     )
-                    raise
+                    return
 
             if not target_job:
                 LOGGER.info(

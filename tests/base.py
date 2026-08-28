@@ -484,6 +484,11 @@ class YoutubeAnalyticsBaseTest(BaseCase):
 
         return return_value
 
+    @classmethod
+    def expected_stream_names(cls):
+        """Return expected discovered streams for this test account."""
+        return set(cls.expected_metadata().keys()).difference(cls.get_streams_to_exclude())
+
     def expected_parent_tap_stream(self, stream=None):
         """return a dictionary with key of table name and value of parent stream"""
         parent_stream = {
@@ -493,40 +498,44 @@ class YoutubeAnalyticsBaseTest(BaseCase):
             return parent_stream
         return parent_stream[stream]
 
-    def get_streams_to_exclude(self):
+    @staticmethod
+    def get_streams_to_exclude():
         """Return a set of streams to exclude from testing."""
         # We don't have access to these streams
         return {
-            'playlist_combined',
+            'playlist_basic',
+            'channel_demographics',
+            'channel_province',
+            'channel_device_os',
+            'playlist_device_os',
             'channel_playback_location',
+            'playlist_province',
+            'playlist_playback_location',
+            'playlist_combined',
+            'channel_traffic_source',
+            'channel_subtitles',
+            'playlist_traffic_source',
+            'channel_combined',
             'content_owner_playlist_traffic_source',
             'content_owner_end_screens',
-            'playlist_traffic_source',
             'content_owner_playlist_province',
             'content_owner_asset_traffic_source',
             'content_owner_asset_sharing_service',
             'content_owner_device_os',
             'content_owner_playlist_basic',
-            'channel_province',
             'content_owner_asset_annotations',
             'content_owner_demographics',
             'channel_cards',
-            'channel_traffic_source',
             'content_owner_playlist_combined',
             'content_owner_asset_cards',
             'content_owner_province',
-            'playlist_basic',
-            'channel_combined',
-            'playlist_province',
             'channel_sharing_service',
             'content_owner_basic',
-            'playlist_playback_location',
             'content_owner_sharing_service',
             'content_owner_estimated_revenue',
             'content_owner_asset_province',
             'content_owner_playlist_playback_location',
             'content_owner_asset_basic',
-            'channel_demographics',
             'content_owner_ad_rates',
             'content_owner_asset_estimated_revenue',
             'content_owner_asset_end_screens',
@@ -534,11 +543,7 @@ class YoutubeAnalyticsBaseTest(BaseCase):
             'content_owner_combined',
             'channel_end_screens',
             'channel_annotations',
-            'channel_device_os',
             'content_owner_playlist_device_os',
-            'playlist_device_os',
-            'channel_subtitles',
-            'channel_basic',
             'content_owner_playback_location',
             'content_owner_asset_playback_location',
             'content_owner_asset_device_os',
