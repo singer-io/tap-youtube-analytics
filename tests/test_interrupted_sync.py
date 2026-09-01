@@ -35,8 +35,8 @@ class YoutubeAnalyticsInterruptedSyncTest(InterruptedSyncTest, YoutubeAnalyticsB
     def streams_to_test(self):
         # Exclude base streams plus additional streams that were added in recent commits
         streams_to_exclude = self.get_streams_to_exclude().union({
-            "channels", 
-            "playlists", 
+            "channels",
+            "playlists",
             "videos",
             # Newly added streams to exclude from interrupted sync test
             *self.NEWLY_DISCOVERED_STREAMS

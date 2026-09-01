@@ -18,7 +18,6 @@ from tap_youtube_analytics.discover import (
 from tap_youtube_analytics.exceptions import (
     YoutubeAnalyticsBadRequestError,
     YoutubeAnalyticsForbiddenError,
-    YoutubeAnalyticsNotFoundError,
     YoutubeAnalyticsNoAccessibleStreamsError,
     YoutubeAnalyticsUnauthorizedError,
 )
@@ -167,9 +166,9 @@ class TestReportingStreamAccess(unittest.TestCase):
         client = MagicMock()
         client.reporting_url = "https://youtubereporting.googleapis.com/v1"
         client.get.return_value = {
-            "jobs": [
-                {"id": "j1", "reportTypeId": "channel_basic_a3"},
-                {"id": "j2", "reportTypeId": "content_owner_basic_a4"},
+            "reportTypes": [
+                {"id": "channel_basic_a3"},
+                {"id": "content_owner_basic_a4"},
             ]
         }
 
@@ -189,10 +188,9 @@ class TestReportingStreamAccess(unittest.TestCase):
         self.assertTrue(result)
         client.post.assert_not_called()
 
-    def test_reporting_stream_access_false_on_post_403(self):
+    def test_reporting_stream_access_false_when_type_not_visible(self):
         client = MagicMock()
         client.reporting_url = "https://youtubereporting.googleapis.com/v1"
-        client.post.side_effect = YoutubeAnalyticsForbiddenError("403")
 
         result = _check_reporting_stream_access(
             client,
@@ -201,32 +199,7 @@ class TestReportingStreamAccess(unittest.TestCase):
         )
 
         self.assertFalse(result)
-
-    def test_reporting_stream_access_false_on_post_404(self):
-        client = MagicMock()
-        client.reporting_url = "https://youtubereporting.googleapis.com/v1"
-        client.post.side_effect = YoutubeAnalyticsNotFoundError("404")
-
-        result = _check_reporting_stream_access(
-            client,
-            stream_name="content_owner_basic",
-            available_report_types=set(),
-        )
-
-        self.assertFalse(result)
-
-    def test_reporting_stream_access_true_when_post_succeeds(self):
-        client = MagicMock()
-        client.reporting_url = "https://youtubereporting.googleapis.com/v1"
-        client.post.return_value = {"id": "new-job", "reportTypeId": "channel_basic_a3"}
-
-        result = _check_reporting_stream_access(
-            client,
-            stream_name="channel_basic",
-            available_report_types=set(),
-        )
-
-        self.assertTrue(result)
+        client.post.assert_not_called()
 
 
 # ---------------------------------------------------------------------------

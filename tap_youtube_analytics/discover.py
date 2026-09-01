@@ -79,8 +79,8 @@ def _check_reporting_api_access(client) -> bool:
 
 
 def _list_available_reporting_job_types(client) -> set:
-    """Return reportTypeIds for existing system-managed or user jobs."""
-    jobs_url = f"{client.reporting_url}/jobs"
+    """Return accessible reporting `reportTypeId`s via non-mutating reportTypes listing."""
+    report_types_url = f"{client.reporting_url}/reportTypes"
     params = {
         "includeSystemManaged": "true",
         "pageSize": 50,
@@ -94,14 +94,20 @@ def _list_available_reporting_job_types(client) -> set:
         if page_token:
             query_params["pageToken"] = page_token
 
-        response = client.get(
-            url=jobs_url,
-            params=query_params,
-            endpoint="reporting_jobs",
-        ) or {}
+        try:
+            response = client.get(
+                url=report_types_url,
+                params=query_params,
+                endpoint="reporting_report_types",
+            ) or {}
+        except _AUTH_ERROR_TYPES:
+            LOGGER.warning(
+                "Unable to list reporting report types with provided credentials."
+            )
+            return set()
 
-        for job in response.get("jobs", []):
-            report_type = job.get("reportTypeId")
+        for report_type_obj in response.get("reportTypes", []):
+            report_type = report_type_obj.get("id")
             if report_type:
                 report_types.add(report_type)
 
@@ -114,11 +120,7 @@ def _list_available_reporting_job_types(client) -> set:
 
 def _check_reporting_stream_access(client, stream_name: str, available_report_types: set) -> bool:
     """
-    Probe access for a reporting stream at the same permission level as sync.
-
-    If a report type does not already have an available job, probe by attempting
-    to create one (same flow sync uses). This catches streams that pass GET /jobs
-    but fail POST /jobs due to missing scopes/content-owner permissions.
+    Probe access for a reporting stream using non-mutating reportType visibility.
     """
     stream_cls = STREAMS.get(stream_name)
     report_type = getattr(stream_cls, "report_type", None) if stream_cls else None
@@ -127,33 +129,19 @@ def _check_reporting_stream_access(client, stream_name: str, available_report_ty
         return True
 
     if report_type in available_report_types:
-        return True
-
-    create_payload = {
-        "name": stream_name,
-        "reportTypeId": report_type,
-    }
-
-    try:
-        client.post(
-            url=client.reporting_url,
-            path="jobs",
-            data=create_payload,
-            endpoint="job_create",
-        )
         LOGGER.info(
-            "Reporting stream '%s' passed create-job probe for report type '%s'.",
+            "Reporting stream '%s' is accessible for report type '%s'.",
             stream_name,
             report_type,
         )
         return True
-    except (YoutubeAnalyticsUnauthorizedError, YoutubeAnalyticsForbiddenError, YoutubeAnalyticsNotFoundError):
-        LOGGER.warning(
-            "Reporting stream '%s' is not accessible for report type '%s' with current credentials.",
-            stream_name,
-            report_type,
-        )
-        return False
+
+    LOGGER.warning(
+        "Reporting stream '%s' is not accessible for report type '%s' with current credentials.",
+        stream_name,
+        report_type,
+    )
+    return False
 
 
 def _prune_inaccessible_children(schemas: dict, field_metadata: dict) -> None:

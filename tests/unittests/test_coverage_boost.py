@@ -396,11 +396,11 @@ class TestSchemaDiscoverExtraCoverage(unittest.TestCase):
         client.reporting_url = "https://reporting.test"
         client.get.side_effect = [
             {
-                "jobs": [{"reportTypeId": "rt_a"}],
+                "reportTypes": [{"id": "rt_a"}],
                 "nextPageToken": "token-2",
             },
             {
-                "jobs": [{"reportTypeId": "rt_b"}],
+                "reportTypes": [{"id": "rt_b"}],
             },
         ]
 
