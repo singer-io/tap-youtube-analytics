@@ -175,6 +175,17 @@ class TestReportingStreamAccess(unittest.TestCase):
         report_types = _list_available_reporting_job_types(client)
         self.assertEqual(report_types, {"channel_basic_a3", "content_owner_basic_a4"})
 
+    def test_list_available_reporting_job_types_returns_empty_on_auth_error(self):
+        client = MagicMock()
+        client.reporting_url = "https://youtubereporting.googleapis.com/v1"
+        client.get.side_effect = YoutubeAnalyticsForbiddenError("403")
+
+        with patch("tap_youtube_analytics.discover.LOGGER") as mock_logger:
+            report_types = _list_available_reporting_job_types(client)
+
+        self.assertEqual(report_types, set())
+        self.assertTrue(mock_logger.warning.called)
+
     def test_reporting_stream_access_true_when_type_in_existing_jobs(self):
         client = MagicMock()
         client.reporting_url = "https://youtubereporting.googleapis.com/v1"
