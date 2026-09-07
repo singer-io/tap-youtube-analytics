@@ -1,5 +1,6 @@
 import unittest
 from unittest.mock import MagicMock, patch
+from datetime import timedelta
 
 from dateutil import parser
 from singer import metadata
@@ -176,6 +177,55 @@ class TestReportStream(unittest.TestCase):
         self.assertEqual(parsed_bookmark, expected_ts)
 
         self.assertEqual(result, 1)
+
+    def test_reporting_request_uses_inclusive_created_after_boundary(self):
+        state = {
+            "bookmarks": {
+                ChannelBasicStream.tap_stream_id: "2023-01-01T00:00:00Z"
+            }
+        }
+
+        job_calls = iter([
+            {
+                "jobs": [
+                    {
+                        "id": "job123",
+                        "reportTypeId": ChannelBasicStream.report_type,
+                        "name": ChannelBasicStream.tap_stream_id,
+                    }
+                ]
+            }
+        ])
+        report_calls = iter([
+            {"reports": []}
+        ])
+
+        captured_reports_params = {}
+
+        def get_side_effect(url=None, params=None, endpoint=None):
+            if endpoint and endpoint.endswith("/jobs"):
+                return next(job_calls)
+            if endpoint and "/reports" in endpoint:
+                captured_reports_params.update(params or {})
+                try:
+                    return next(report_calls)
+                except StopIteration:
+                    return {"reports": []}
+            return {}
+
+        self.client.get.side_effect = get_side_effect
+
+        stream = ChannelBasicStream(self.client, self.catalog_entry)
+
+        with patch("tap_youtube_analytics.streams.abstracts.metrics.record_counter", side_effect=lambda *_: DummyCounter()):
+            with patch("tap_youtube_analytics.streams.abstracts.write_bookmark", side_effect=lambda s, *_args, **_kwargs: s):
+                result = stream.sync(state=state, transformer=self.transformer)
+
+        self.assertEqual(result, 0)
+        expected_created_after = (
+            parser.isoparse("2023-01-01T00:00:00Z") - timedelta(microseconds=1)
+        ).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        self.assertEqual(captured_reports_params.get("createdAfter"), expected_created_after)
 
 
 class TestPlaylistItemsStream(unittest.TestCase):

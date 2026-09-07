@@ -662,7 +662,10 @@ class ReportStream(IncrementalStream):
         current_max_dttm = bookmark_dttm
 
         self.url_endpoint = self.get_url_endpoint(parent_obj)
-        self.update_params(updated_since=effective_start)
+        created_after_inclusive = effective_start_dttm - timedelta(microseconds=1)
+        self.update_params(
+            updated_since=created_after_inclusive.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        )
 
         with metrics.record_counter(self.tap_stream_id) as counter:
             try:
