@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.1
+  * Sync update: reduced the `created_at` filter window to ensure at least one sync run is included.
+
 ## 0.2.0
   * Streams the credentials cannot access are now excluded from the catalog during discovery instead of failing the entire discover run. [#16](https://github.com/singer-io/tap-youtube-analytics/pull/16)
   * Refactored discovery to a centralized access-check flow and added/updated unit tests for access checks and stream pruning.
