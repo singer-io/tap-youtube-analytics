@@ -12,7 +12,7 @@ class TestSchema(unittest.TestCase):
         mock_realpath.return_value = "/path/to/schema.py"
         mock_dirname.return_value = "/path/to"
         result = get_abs_path("schemas/shared")
-        self.assertEqual(result, "/path/to/schemas/shared")
+        self.assertEqual(result.replace("\\", "/"), "/path/to/schemas/shared")
 
     @patch("tap_youtube_analytics.schema.os.path.exists")
     @patch("tap_youtube_analytics.schema.os.listdir")

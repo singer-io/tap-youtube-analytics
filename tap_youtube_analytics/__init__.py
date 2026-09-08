@@ -28,10 +28,11 @@ def ensure_refresh_token(config):
         "handshake supplies one via 'oauth_credentials'."
     )
 
-def do_discover():
-    """Discover and emit the catalog to stdout"""
+
+def do_discover(client):
+    """Discover and emit the catalog to stdout."""
     LOGGER.info("Starting discover")
-    catalog = discover()
+    catalog = discover(client)
     json.dump(catalog.to_dict(), sys.stdout, indent=2)
     LOGGER.info("Finished discover")
 
@@ -47,7 +48,7 @@ def main():
 
     with Client(parsed_args.config) as client:
         if parsed_args.discover:
-            do_discover()
+            do_discover(client)
         elif parsed_args.catalog:
             sync(
                  client=client,

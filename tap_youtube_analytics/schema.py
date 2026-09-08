@@ -29,7 +29,7 @@ def load_schema_references() -> Dict:
 
     refs = {}
     for shared_schema_file in shared_file_names:
-        with open(os.path.join(shared_schema_path, shared_schema_file)) as data_file:
+        with open(os.path.join(shared_schema_path, shared_schema_file), encoding="utf-8") as data_file:
             refs["shared/" + shared_schema_file] = json.load(data_file)
 
     return refs
@@ -58,7 +58,7 @@ def _load_schema_for_stream(stream_name: str) -> Dict:
             f"Tried: {candidate} and fallback: {fallback}"
         )
 
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 

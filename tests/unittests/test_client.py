@@ -62,9 +62,8 @@ class TestClient(unittest.TestCase):
         result = self.client.get(path="test_path")
         self.assertEqual(result, {"data": "test_data"})
 
-    @patch('backoff.expo', return_value=0)  # Disable backoff delays
     @patch("requests.Session.request")
-    def test_make_request_rate_limit_error(self, mock_request, mock_backoff):
+    def test_make_request_rate_limit_error(self, mock_request):
         """Test rate limit error handling"""
         # Set up valid token to avoid authentication calls
         self.client._Client__access_token = "valid_token"
@@ -76,11 +75,10 @@ class TestClient(unittest.TestCase):
         mock_request.return_value = mock_response
 
         with self.assertRaises(YoutubeAnalyticsRateLimitError):
-            self.client.get(path="test_path")
+            self.client._Client__make_request.__wrapped__(self.client, "GET", path="test_path")
 
-    @patch('backoff.expo', return_value=0)  # Disable backoff delays
     @patch("requests.Session.request")
-    def test_make_request_server_error(self, mock_request, mock_backoff):
+    def test_make_request_server_error(self, mock_request):
         """Test server error handling"""
         # Set up valid token to avoid authentication calls
         self.client._Client__access_token = "valid_token"
@@ -92,4 +90,4 @@ class TestClient(unittest.TestCase):
         mock_request.return_value = mock_response
 
         with self.assertRaises(YoutubeAnalyticsBackoffError):
-            self.client.get(path="test_path")
+            self.client._Client__make_request.__wrapped__(self.client, "GET", path="test_path")

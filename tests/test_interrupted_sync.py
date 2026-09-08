@@ -8,44 +8,70 @@ class YoutubeAnalyticsInterruptedSyncTest(InterruptedSyncTest, YoutubeAnalyticsB
     """Test tap sets a bookmark and respects it for the next sync of a
     stream."""
 
-    # Narrow window to minimise /search quota usage — two syncs run back to back
-    @property
-    def start_date(self):
-        return self.timedelta_formatted(dt.utcnow(), delta=timedelta(days=-7))
+    NEWLY_DISCOVERED_STREAMS = {
+        "playlist_basic",
+        "channel_demographics",
+        "channel_province",
+        "channel_device_os",
+        "playlist_device_os",
+        "channel_playback_location",
+        "playlist_playback_location",
+        "playlist_province",
+        "playlist_combined",
+        "channel_traffic_source",
+        "channel_subtitles",
+        "playlist_traffic_source",
+        "channel_combined"
+    }
 
     @staticmethod
     def name():
         return "tap_tester_youtube_analytics_interrupted_sync_test"
 
+    @classmethod
+    def expected_stream_names(cls):
+        return super().expected_stream_names().union(cls.NEWLY_DISCOVERED_STREAMS)
+
     def streams_to_test(self):
-        return {"playlist_items"}
+        # Exclude base streams plus additional streams that were added in recent commits
+        streams_to_exclude = self.get_streams_to_exclude().union({
+            "channels",
+            "playlists",
+            "videos",
+            # Newly added streams to exclude from interrupted sync test
+            *self.NEWLY_DISCOVERED_STREAMS
+        })
+        return self.expected_stream_names().difference(streams_to_exclude)
 
     def manipulate_state(self):
         return {
             "currently_syncing": "playlist_items",
             "bookmarks": {
-                "playlist_items": {"published_at": self.timedelta_formatted(
-                    dt.utcnow(), delta=timedelta(days=-15))}
+                "playlist_items": {"published_at": "2025-04-22T00:00:00Z"}
             }
         }
 
     def test_interrupted_sync_stream_order(self):
-        """Skip stream order verification — requires 2+ streams to be meaningful.
-        With a single stream under test, the framework's already-synced slice logic
-        cannot distinguish interrupted vs completed streams.
+        """
+        Verify that the sync starts with the interrupted stream,
+        then not yet synced, then completed.
+
+        This tap can have no "already synced" streams in manipulated state;
+        in that case skip the trailing-order assertion.
         """
 
-    def test_resuming_sync_records(self):
-        """Verify for all streams that the recovery sync gets all the expected records.
+        expected_interrupted_sync = self.manipulate_state()['currently_syncing']
+        expected_yet_to_be_synced = self.streams_to_test().difference(
+            self.manipulate_state()['bookmarks'].keys())
+        expected_already_synced = set(self.manipulate_state()['bookmarks'].keys()).difference(
+            {expected_interrupted_sync})
 
-        Sorts records by 'id' before comparison since YouTube API does not guarantee
-        a stable record order between syncs.
-        """
-        # Patch both record sets to be sorted so the base assertEqual passes
-        for stream in (self.first_sync_records or {}):
-            msgs = self.first_sync_records[stream].get('messages', [])
-            msgs.sort(key=lambda r: r.get('data', {}).get('id', ''))
-        for stream in (self.resuming_sync_records or {}):
-            msgs = self.resuming_sync_records[stream].get('messages', [])
-            msgs.sort(key=lambda r: r.get('data', {}).get('id', ''))
-        super().test_resuming_sync_records()
+        self.assertEqual(self.resuming_sync_order[0], expected_interrupted_sync)
+
+        actual_next_synced = set(self.resuming_sync_order[1:1 + len(expected_yet_to_be_synced)])
+        self.assertSetEqual(actual_next_synced, expected_yet_to_be_synced)
+
+        if expected_already_synced:
+            actual_last_synced = set(self.resuming_sync_order[-len(expected_already_synced):])
+            self.assertSetEqual(actual_last_synced, expected_already_synced)
+
