@@ -654,10 +654,8 @@ class ReportStream(IncrementalStream):
         attribution_cutoff = utils.now() - timedelta(days=ATTRIBUTION_DAYS)
         if attribution_cutoff < bookmark_dttm:
             effective_start_dttm = attribution_cutoff
-            effective_start = utils.strftime(effective_start_dttm)
         else:
             effective_start_dttm = bookmark_dttm
-            effective_start = bookmark_value
 
         current_max_dttm = bookmark_dttm
 
