@@ -4,7 +4,6 @@ from singer.catalog import Catalog, CatalogEntry, Schema
 from tap_youtube_analytics.exceptions import (
     YoutubeAnalyticsUnauthorizedError,
     YoutubeAnalyticsForbiddenError,
-    YoutubeAnalyticsNotFoundError,
     YoutubeAnalyticsNoAccessibleStreamsError,
 )
 from tap_youtube_analytics.schema import get_schemas

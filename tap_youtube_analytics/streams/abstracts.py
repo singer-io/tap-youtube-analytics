@@ -654,15 +654,14 @@ class ReportStream(IncrementalStream):
         attribution_cutoff = utils.now() - timedelta(days=ATTRIBUTION_DAYS)
         if attribution_cutoff < bookmark_dttm:
             effective_start_dttm = attribution_cutoff
-            effective_start = utils.strftime(effective_start_dttm)
         else:
             effective_start_dttm = bookmark_dttm
-            effective_start = bookmark_value
 
         current_max_dttm = bookmark_dttm
 
         self.url_endpoint = self.get_url_endpoint(parent_obj)
-        self.update_params(updated_since=effective_start)
+        created_after_inclusive = effective_start_dttm - timedelta(microseconds=1)
+        self.update_params(updated_since=utils.strftime(created_after_inclusive))
 
         with metrics.record_counter(self.tap_stream_id) as counter:
             try:
