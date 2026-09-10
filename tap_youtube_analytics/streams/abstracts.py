@@ -661,9 +661,7 @@ class ReportStream(IncrementalStream):
 
         self.url_endpoint = self.get_url_endpoint(parent_obj)
         created_after_inclusive = effective_start_dttm - timedelta(microseconds=1)
-        self.update_params(
-            updated_since=created_after_inclusive.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-        )
+        self.update_params(updated_since=utils.strftime(created_after_inclusive))
 
         with metrics.record_counter(self.tap_stream_id) as counter:
             try:
