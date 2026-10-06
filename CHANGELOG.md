@@ -1,7 +1,7 @@
 # Changelog
 
 ## 0.2.2
-  * Set explicit read-only GitHub Actions token permissions to address CodeQL security findings
+  * Set explicit read-only GitHub Actions token permissions to address CodeQL security findings [#20](https://github.com/singer-io/tap-youtube-analytics/pull/20)
 
 ## 0.2.1
   * Sync update: made reporting stream incremental bookmarks inclusive by shifting `create_time` filtering back by 1 microsecond.
