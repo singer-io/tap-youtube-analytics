@@ -11,6 +11,7 @@ class YoutubeAnalyticsBaseTest(BaseCase):
     """
     start_date = "2019-01-01T00:00:00Z"
     PARENT_TAP_STREAM_ID = "parent-tap-stream-id"
+    STREAMS_WITHOUT_TEST_DATA = {"channel_basic"}
 
     @staticmethod
     def tap_name():

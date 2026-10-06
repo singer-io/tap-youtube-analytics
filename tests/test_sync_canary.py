@@ -36,5 +36,7 @@ class YoutubeAnalyticsSyncCanaryTest(SyncCanaryTest, YoutubeAnalyticsBaseTest):
 
     def streams_to_test(self):
         """Only test streams known to have records in the test account."""
-        streams_to_exclude = self.get_streams_to_exclude()
+        streams_to_exclude = self.get_streams_to_exclude().union(
+            self.STREAMS_WITHOUT_TEST_DATA
+        )
         return self.expected_stream_names().difference(streams_to_exclude)

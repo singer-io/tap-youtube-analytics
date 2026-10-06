@@ -41,6 +41,7 @@ class YoutubeAnalyticsInterruptedSyncTest(InterruptedSyncTest, YoutubeAnalyticsB
             # Newly added streams to exclude from interrupted sync test
             *self.NEWLY_DISCOVERED_STREAMS
         })
+        streams_to_exclude = streams_to_exclude.union(self.STREAMS_WITHOUT_TEST_DATA)
         return self.expected_stream_names().difference(streams_to_exclude)
 
     def manipulate_state(self):
