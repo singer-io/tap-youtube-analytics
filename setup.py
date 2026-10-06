@@ -3,7 +3,7 @@
 from setuptools import find_packages, setup
 
 setup(name='tap-youtube-analytics',
-      version='0.2.0',
+      version='0.2.1',
       description='Singer.io tap for extracting data from the Youtube Analytics API',
       author='jeff.huth@bytecode.io',
       classifiers=['Programming Language :: Python :: 3 :: Only'],
