@@ -96,4 +96,5 @@ class YoutubeAnalyticsAllFields(AllFieldsTest, YoutubeAnalyticsBaseTest):
 
     def streams_to_test(self):
         streams_to_exclude = self.get_streams_to_exclude()
+        streams_to_exclude = streams_to_exclude.union(self.STREAMS_WITHOUT_TEST_DATA)
         return self.expected_stream_names().difference(streams_to_exclude)
