@@ -5,6 +5,7 @@ import json
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Iterator
 
 import backoff
+import humps
 import requests
 from requests import session
 from requests.exceptions import ChunkedEncodingError, ConnectionError, Timeout
@@ -169,7 +170,18 @@ class Client:
                         delimiter=",",
                     )
 
-                    return [row for row in reader if row]
+                    normalized_rows = []
+                    for row in reader:
+                        if not row:
+                            continue
+                        normalized_rows.append(
+                            {
+                                humps.decamelize(key.strip()): value
+                                for key, value in row.items()
+                                if key
+                            }
+                        )
+                    return normalized_rows
 
         yield from _fetch_rows()
 

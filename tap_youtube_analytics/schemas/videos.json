@@ -20,6 +20,12 @@
                 "string"
             ]
         },
+        "channel_id": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
         "published_at": {
             "type": [
                 "null",
