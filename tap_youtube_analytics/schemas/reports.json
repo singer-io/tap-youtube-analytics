@@ -208,6 +208,12 @@
                 "integer"
             ]
         },
+        "engaged_views": {
+            "type": [
+                "null",
+                "integer"
+            ]
+        },
         "red_views": {
             "type": [
                 "null",
