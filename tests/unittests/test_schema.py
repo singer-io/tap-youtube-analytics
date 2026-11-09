@@ -154,6 +154,12 @@ class TestSchema(unittest.TestCase):
         # Assert metadata.write was called with root breadcrumb and parent-tap-stream-id
         mock_write.assert_any_call(m_map, (), "parent-tap-stream-id", "parent_stream")
 
+    def test_reports_schema_includes_engaged_views(self):
+        """channel_basic_a3 added engaged_views; schema must keep it or Singer strips the CSV column."""
+        schema = _load_schema_for_stream("channel_basic")
+        self.assertIn("engaged_views", schema["properties"])
+        self.assertEqual(schema["properties"]["engaged_views"]["type"], ["null", "integer"])
+
 
 if __name__ == "__main__":
     unittest.main()

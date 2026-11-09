@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.2
+  * Add `engaged_views` to the shared reports schema so `channel_basic_a3` (and other a3 reports) land the Shorts-era metric instead of dropping it (`additionalProperties: false`).
+
 ## 0.2.1
   * Sync update: made reporting stream incremental bookmarks inclusive by shifting `create_time` filtering back by 1 microsecond.
 
