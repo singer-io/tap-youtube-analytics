@@ -160,6 +160,12 @@ class TestSchema(unittest.TestCase):
         self.assertIn("engaged_views", schema["properties"])
         self.assertEqual(schema["properties"]["engaged_views"]["type"], ["null", "integer"])
 
+    def test_reports_schema_has_no_multiple_of(self):
+        """target-postgres jsonschema multipleOf 1e-25 raises decimal.DivisionImpossible."""
+        schema = _load_schema_for_stream("channel_playback_location")
+        for name, prop in schema["properties"].items():
+            self.assertNotIn("multipleOf", prop, name)
+
 
 if __name__ == "__main__":
     unittest.main()
