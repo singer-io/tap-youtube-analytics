@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.3
+  * Drop `multipleOf: 1e-25` from report number fields. `target-postgres` jsonschema validation does `value % 1e-25` with Decimal and raises `DivisionImpossible` on ordinary Analytics numbers.
+
 ## 0.2.2
   * Add `engaged_views` to the shared reports schema so `channel_basic_a3` (and other a3 reports) land the Shorts-era metric instead of dropping it (`additionalProperties: false`).
 
