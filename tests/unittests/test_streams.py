@@ -8,6 +8,7 @@ from singer.catalog import CatalogEntry, Schema
 
 import humps
 
+from tap_youtube_analytics.streams.channels import Channels
 from tap_youtube_analytics.streams.playlist_items import PlaylistItems
 from tap_youtube_analytics.streams.reports import ChannelBasicStream
 from tap_youtube_analytics.streams.videos import Videos
@@ -389,6 +390,27 @@ class TestVideosStream(unittest.TestCase):
         parsed = parser.isoparse(bookmark_updates["value"])
         self.assertEqual(parsed, parser.isoparse("2023-01-03T00:00:00Z"))
         self.assertEqual(result, 2)
+
+
+class TestChannelDimensionFields(unittest.TestCase):
+    def test_videos_transform_adds_channel_id(self):
+        stream = Videos(MagicMock(), MagicMock())
+        record = {
+            "id": "abc123",
+            "snippet": {"channelId": "UCxyz", "publishedAt": "2024-01-01T00:00:00Z"},
+        }
+        out = stream.transform_data_record(record)
+        self.assertEqual(out["channel_id"], "UCxyz")
+
+    def test_channels_transform_adds_channel_id_and_name(self):
+        stream = Channels(MagicMock(), MagicMock())
+        record = {
+            "id": "UCxyz",
+            "snippet": {"title": "The Daily Upside", "publishedAt": "2020-01-01T00:00:00Z"},
+        }
+        out = stream.transform_data_record(record)
+        self.assertEqual(out["channel_id"], "UCxyz")
+        self.assertEqual(out["name"], "The Daily Upside")
 
 
 if __name__ == "__main__":

@@ -15,6 +15,14 @@ class Videos(IncrementalStream):
     path = "search"
     endpoint = "search_videos"
 
+    def transform_data_record(self, record):
+        new_record = super().transform_data_record(record)
+        snippet = new_record.get("snippet") or {}
+        channel_id = snippet.get("channel_id")
+        if channel_id:
+            new_record["channel_id"] = channel_id
+        return new_record
+
     def chunks(self, items: Iterable[str], cnt: int) -> Iterable[List[str]]:
         """Yield successive n-sized chunks from any iterable."""
         items_list = list(items)
@@ -86,6 +94,7 @@ class Videos(IncrementalStream):
                     counter=counter,
                     total_written=total_written,
                     state=state,
+                    sync_channel_id=channel_id,
                 )
 
 
@@ -101,6 +110,7 @@ class Videos(IncrementalStream):
         counter: metrics.Counter,
         total_written: int,
         state: Dict,
+        sync_channel_id: str = "",
     ) -> Tuple[int, str]:
         """Fetch video details in chunks and emit records.
 
@@ -132,6 +142,8 @@ class Videos(IncrementalStream):
                     self.schema,
                     self.metadata,
                 )
+                if sync_channel_id and not transformed_record.get("channel_id"):
+                    transformed_record["channel_id"] = sync_channel_id
                 record_timestamp = transformed_record[self.replication_keys[0]]
 
                 record_dttm = utils.strptime_to_utc(record_timestamp)

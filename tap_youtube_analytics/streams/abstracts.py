@@ -256,12 +256,12 @@ class BaseStream(ABC):
     def transform_report_record(self, record, dimensions, report):
         """Transform report records"""
 
-        new_record = record.copy()
+        new_record = humps.decamelize(record.copy())
         dim_lookup_map = self._load_dim_lookup_map()
 
         dimension_values = {}
 
-        for key, val in list(record.items()):
+        for key, val in list(new_record.items()):
             # Add dimension key-val to dimension_values dictionary
             if key in dimensions:
                 dimension_values[key] = val
