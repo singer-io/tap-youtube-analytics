@@ -121,7 +121,7 @@ class Videos(IncrementalStream):
         stop_fetching = False
         for video_id_chunk in video_id_chunks:
             videos_params = {
-                "part": "id,snippet",
+                "part": "id,snippet,contentDetails,statistics",
                 "id": ",".join(video_id_chunk)
             }
 
